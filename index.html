@@ -1779,50 +1779,73 @@
 
             matches.forEach(sm => {
               const smCreator = String(sm.creatorName || '').toLowerCase().trim();
-              const isSmFinished = sm.status === 'finished' || sm.opponent;
+              const smOpponent = String(sm.opponent?.name || '').toLowerCase().trim();
+              const isSmFinished = (sm.status === 'finished') || Boolean(sm.opponent);
 
-              if (isSmFinished && smCreator === myName) {
+              const isCreator = (myName && smCreator === myName);
+              const isOpponent = (myName && smOpponent === myName);
+
+              if (isSmFinished && (isCreator || isOpponent)) {
                 const sIdx = userSaved.findIndex(lm => lm.id === sm.id);
                 const localMatch = sIdx !== -1 ? userSaved[sIdx] : null;
 
-                // Eğer maç yerelde açık kalmışsa veya offline çözülmemişse
-                if (localMatch && (localMatch.status !== 'finished' || !localMatch.offlineResolved)) {
+                if (!localMatch || localMatch.status !== 'finished' || !localMatch.offlineResolved) {
                   const winnerSide = String(sm.winnerSide || 'K').toUpperCase().trim();
                   const p1Side = String(sm.side || 'K').toUpperCase().trim();
-                  const creatorWon = (winnerSide === p1Side);
+                  const userWon = isCreator ? (winnerSide === p1Side) : (winnerSide !== p1Side);
                   const cleanMatchVal = parseCleanNumber(sm.value) || 100000000;
 
-                  userSaved[sIdx] = {
-                    ...localMatch,
+                  const updatedMatchObj = {
+                    ...(localMatch || {}),
                     ...sm,
                     status: 'finished',
                     offlineResolved: true,
+                    userWon: userWon,
                     finishedAt: sm.finishedAt || Date.now()
                   };
+
+                  if (sIdx !== -1) {
+                    userSaved[sIdx] = updatedMatchObj;
+                  } else {
+                    userSaved.unshift(updatedMatchObj);
+                  }
                   hasChanges = true;
 
                   let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
-                  if (creatorWon) {
+                  if (userWon) {
                     curProfit += cleanMatchVal;
-                    const rawLoot = [...(sm.opponentItems || [])];
+                    // Kazandigimizda rakip esyalari envantere ekle
+                    const rawLoot = isCreator ? (sm.opponentItems || []) : (sm.items || []);
                     const newLoot = rawLoot.map((item, idx) => ({
                       ...item,
                       id: 'loot_off_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
                       value: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
                     }));
-                    fullInventory.push(...newLoot);
-                    filteredInventory = [...fullInventory];
-                    needsInvSync = true;
-                    showToast(`🏆 Sen yokken @${sm.opponent?.name || 'Player'} maçına katıldı ve KAZANDIN! (+${cleanMatchVal.toLocaleString()} Val)`, "success");
+                    if (newLoot.length) {
+                      fullInventory.push(...newLoot);
+                      filteredInventory = [...fullInventory];
+                      needsInvSync = true;
+                    }
+                    const otherPlayer = isCreator ? (sm.opponent?.name || 'Player') : sm.creatorName;
+                    showToast(`🏆 Sen yokken @${otherPlayer} ile maçın sonuçlandı ve KAZANDIN! (+${cleanMatchVal.toLocaleString()} Val)`, "success");
                   } else {
                     curProfit -= cleanMatchVal;
-                    needsInvSync = true;
-                    showToast(`😔 Sen yokken @${sm.opponent?.name || 'Player'} maçına katıldı ve kaybettin. (-${cleanMatchVal.toLocaleString()} Val)`, "info");
+                    const otherPlayer = isCreator ? (sm.opponent?.name || 'Player') : sm.creatorName;
+                    showToast(`😔 Sen yokken @${otherPlayer} ile maçın sonuçlandı ve kaybettin. (-${cleanMatchVal.toLocaleString()} Val)`, "info");
                   }
 
                   localStorage.setItem(getProfitStorageKey(), curProfit.toString());
                   updateProfitUI(curProfit);
                 }
+              }
+            });
+
+            // userSaved icindeki tum askida kalmis / opponent'i olan maclari otomatik temizle
+            userSaved.forEach((lm, idx) => {
+              if (lm.status !== 'finished' && lm.opponent) {
+                userSaved[idx].status = 'finished';
+                userSaved[idx].offlineResolved = true;
+                hasChanges = true;
               }
             });
 
@@ -2441,18 +2464,30 @@
       }
 
       container.innerHTML = list.map(m => {
-        const isMy = myName && (m.creatorName || "").toLowerCase() === myName;
+        const creatorClean = String(m.creatorName || "").toLowerCase().trim();
+        const isMy = (myName && creatorClean === myName);
+
+        // KURAL 1: All Matches modunda kendi kurdugumuz acik maclar KESINLIKLE gorunmez
+        if (!myMatchesOnly && isMy) {
+          return '';
+        }
+
+        // KURAL 2: My Matches modunda baskasinin henuz girilmemis acik maclari KESINLIKLE gorunmez
+        if (myMatchesOnly && !isMy && !m.opponent && m.status !== 'finished') {
+          return '';
+        }
+
+        // KURAL 3: Eger bir mac bitmisse VEYA rakip (opponent) atanmissa,
+        // bu mac KESINLIKLE bitmis gecmis karti (Bloxluck History Card) olarak cikar! ASLA 'Join Match' butonu cikamaz!
+        const isFinishedOrPlayed = (m.status === 'finished') || Boolean(m.opponent);
+
         const p1Side = m.side || 'K';
         const p2Side = p1Side === 'K' ? 'D' : 'K';
         const cAvatar = getSafeAvatar(m.creatorAvatar, m.creatorName);
-        const matchVal = Number(m.value) || 100000000;
+        const matchVal = parseCleanNumber(m.value) || 100000000;
 
-        // ±5% Bloxluck toleransı
-        const minAllowed = Math.floor(matchVal * 0.95);
-        const maxAllowed = Math.ceil(matchVal * 1.05);
-
-        if (m.status === 'finished') {
-          const winnerSide = String(m.winnerSide || 'K').toUpperCase().trim();
+        if (isFinishedOrPlayed) {
+          const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
           const winnerChipHtml = winnerSide === 'K'
             ? `<div class="chip chip-black" title="Winner: K">K</div>`
@@ -2464,7 +2499,7 @@
           return `
           <div class="bloxluck-history-card is-finished">
             <div class="history-players-col">
-              <!-- Player 1 Satırı (Görseldeki ColorexGamingYt gibi) -->
+              <!-- Player 1 Satırı -->
               <div class="history-player-row">
                 <div class="history-player-left">
                   <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p1Side}</span>
@@ -2472,16 +2507,14 @@
                   <span class="history-player-name">${m.creatorName}</span>
                   <div class="history-items-strip">
                     ${(m.items || []).map(i => `
-                      <div class="history-item-icon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
-                        <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
-                      </div>
+                      <img src="${getItemImgUrl(i)}" class="history-item-img" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
                     `).join('')}
                   </div>
                 </div>
                 <div class="history-val-text">Value: ${p1Val.toLocaleString()}</div>
               </div>
 
-              <!-- Player 2 Satırı (Görseldeki ADOPTME_DEPOMM gibi) -->
+              <!-- Player 2 Satırı -->
               <div class="history-player-row">
                 <div class="history-player-left">
                   <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p2Side}</span>
@@ -2489,9 +2522,7 @@
                   <span class="history-player-name">${m.opponent?.name || 'Opponent'}</span>
                   <div class="history-items-strip">
                     ${(m.opponentItems || []).map(i => `
-                      <div class="history-item-icon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
-                        <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
-                      </div>
+                      <img src="${getItemImgUrl(i)}" class="history-item-img" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
                     `).join('')}
                   </div>
                 </div>
@@ -2499,12 +2530,15 @@
               </div>
             </div>
 
-            <!-- En Sağdaki Büyük Kazanan Coin Çipi (Görseldeki gibi) -->
+            <!-- En Sağdaki Büyük Kazanan Coin Çipi -->
             <div class="history-winner-col">
               ${winnerChipHtml}
             </div>
           </div>`;
         }
+
+        const minAllowed = Math.floor(matchVal * 0.95);
+        const maxAllowed = Math.ceil(matchVal * 1.05);
 
         // Bloxluck Birebir Kart Tasarımı (Görsel 12)
         return `
@@ -2957,6 +2991,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
       let joinedMatchCopy = {
         ...m,
+        status: 'finished', // Katildigimiz mac asla acik kalamaz, dogrudan sonuclanmis/oynanmis kabul edilir
         opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
         opponentItems: normChosenItems
       };
