@@ -938,7 +938,6 @@
       return 'kd_my_matches_' + (currentUser ? currentUser.name.toLowerCase() : 'guest');
     }
 
-    // FIX APPLIED: Removed expiration filter and added deduplication to ensure match history is always visible and doesn't duplicate
     function getMySavedMatches() {
       try {
         let list = JSON.parse(localStorage.getItem(getMyMatchesStorageKey()) || '[]');
@@ -1856,6 +1855,11 @@
       document.getElementById('sideSelectD').className = s === 'D' ? 'side-card active' : 'side-card';
     }
 
+    // =====================================================================
+    // FIX: confirmCreatedMatch - duplikasyon önlendi
+    // Önceki kodda aynı isme sahip item'lar birden fazla kez geliyordu.
+    // Şimdi her seçilen id sadece bir kez inventory'den alınır.
+    // =====================================================================
     function confirmCreatedMatch() {
       const selectedEls = document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected');
       const errBox = document.getElementById('createMatchErrorBox');
@@ -1865,9 +1869,20 @@
         return;
       }
       const chosenIds = Array.from(selectedEls).map(el => el.getAttribute('data-id'));
-      const chosenItems = fullInventory.filter(i => chosenIds.includes(i.id));
+
+      // Her id'yi inventory'de sadece bir kez bul (aynı isimli item'lar için duplikasyonu önler)
+      const chosenItems = [];
+      const usedIndices = new Set();
+      for (const id of chosenIds) {
+        const idx = fullInventory.findIndex((item, j) => item.id === id && !usedIndices.has(j));
+        if (idx !== -1) {
+          chosenItems.push(fullInventory[idx]);
+          usedIndices.add(idx);
+        }
+      }
+
       const totalVal = chosenItems.reduce((a, b) => a + (b.value || 0), 0);
-      fullInventory = fullInventory.filter(i => !chosenIds.includes(i.id));
+      fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
       filteredInventory = [...fullInventory];
       renderInventory();
       const newMatch = {
