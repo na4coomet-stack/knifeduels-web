@@ -502,142 +502,162 @@
       transition: all 0.2s ease;
     }
 
-    /* ===== BLOXLUCK EXACT MATCH CARD STYLES ===== */
+    
+    /* ==========================================================================
+       BLOXLUCK EXACT CARD STYLES (MATCHES IMAGE 12)
+       ========================================================================== */
     .blox-duel-card {
-      background: #0e131d;
-      border: 1.5px solid #1c2433;
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      transition: border-color 0.2s ease, transform 0.15s ease;
+      background: #141a26 !important;
+      border: 1.5px solid #1f2838 !important;
+      border-radius: 12px !important;
+      padding: 14px 16px !important;
+      margin-bottom: 12px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+      position: relative !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
     }
     .blox-duel-card:hover {
-      border-color: #2a374d;
-    }
-    .card-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .card-creator-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .card-creator-info .card-player-name {
-      font-size: 0.95rem;
-      font-weight: 800;
-      color: #ffffff;
-      max-width: 170px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card-value-box {
-      text-align: right;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      line-height: 1.15;
-    }
-    .card-val-label {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: #94a3b8;
-      letter-spacing: 0.5px;
-    }
-    .card-val-num {
-      font-size: 1.25rem;
-      font-weight: 900;
-      color: #ffffff;
-      margin: 1px 0;
-    }
-    .card-val-range {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.3px;
-    }
-    .card-items-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      min-height: 40px;
-      padding: 2px 0;
-    }
-    .card-item-thumb {
-      width: 38px;
-      height: 38px;
-      background: #080b10;
-      border: 1.5px solid #1a2332;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      padding: 3px;
-      flex-shrink: 0;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-    .card-item-thumb:hover {
-      transform: scale(1.1);
-      border-color: #38bdf8;
-    }
-    .card-item-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .card-bottom-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 4px;
-    }
-    .btn-blox-join {
-      flex: 1;
-      background-color: #ffffff;
-      color: #000000;
-      font-weight: 900;
-      font-size: 0.92rem;
-      border: 1px solid #ffffff;
-      border-radius: 10px;
-      padding: 13px 16px;
-      cursor: pointer;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.18);
-      transition: all 0.15s ease;
-      letter-spacing: 0.2px;
-    }
-    .btn-blox-join:hover {
-      background-color: #f1f5f9;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
-    }
-    .btn-blox-cancel {
-      flex: 1;
-      background-color: #ef4444;
-      color: #ffffff;
-      font-weight: 900;
-      font-size: 0.92rem;
-      border: none;
-      border-radius: 10px;
-      padding: 13px 16px;
-      cursor: pointer;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
-      transition: all 0.15s ease;
-    }
-    .btn-blox-cancel:hover {
-      background-color: #dc2626;
-      transform: translateY(-1px);
+      border-color: #2b384e !important;
     }
 
-    /* ===== DESKTOP RESPONSIVE (BLOXLUCK STYLE) ===== */
+    .card-top-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      width: 100% !important;
+      gap: 12px !important;
+    }
+    .card-creator-info {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+    .card-creator-info .card-player-name {
+      font-size: 0.98rem !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 180px !important;
+    }
+
+    .card-value-box {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      text-align: right !important;
+      flex-shrink: 0 !important;
+      line-height: 1.1 !important;
+    }
+    .card-val-title {
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      letter-spacing: 0.5px !important;
+      text-transform: uppercase !important;
+    }
+    .card-val-amount {
+      font-size: 1.35rem !important;
+      font-weight: 900 !important;
+      color: #ffffff !important;
+      margin: 2px 0 !important;
+    }
+    .card-val-range {
+      font-size: 0.72rem !important;
+      font-weight: 700 !important;
+      color: #64748b !important;
+      letter-spacing: 0.2px !important;
+    }
+
+    .card-items-grid {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      align-items: center !important;
+      min-height: 36px !important;
+      padding: 4px 0 !important;
+      width: 100% !important;
+    }
+    .card-item-img {
+      width: 32px !important;
+      height: 32px !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) !important;
+      transition: transform 0.15s ease !important;
+      flex-shrink: 0 !important;
+    }
+    .card-item-img:hover {
+      transform: scale(1.25) !important;
+    }
+
+    .card-action-wrap {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      width: 100% !important;
+      margin-top: 2px !important;
+    }
+    .card-opp-chip-wrap {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+    .btn-card-join-bloxluck {
+      width: 100% !important;
+      background: #00df81 !important;
+      color: #000000 !important;
+      font-weight: 900 !important;
+      font-size: 0.95rem !important;
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 12px 16px !important;
+      cursor: pointer !important;
+      text-align: center !important;
+      box-shadow: 0 4px 15px rgba(0, 223, 129, 0.25) !important;
+      transition: all 0.15s ease !important;
+      letter-spacing: 0.2px !important;
+    }
+    .btn-card-join-bloxluck:hover {
+      background: #05f08c !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 6px 20px rgba(0, 223, 129, 0.35) !important;
+    }
+    .btn-card-cancel-bloxluck {
+      width: 100% !important;
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      font-weight: 900 !important;
+      font-size: 0.95rem !important;
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 12px 16px !important;
+      cursor: pointer !important;
+      text-align: center !important;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25) !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn-card-cancel-bloxluck:hover {
+      background: #dc2626 !important;
+      transform: translateY(-1px) !important;
+    }
+
+    /* History image */
+    .history-item-img {
+      width: 22px !important;
+      height: 22px !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)) !important;
+      flex-shrink: 0 !important;
+    }
+
+/* ===== DESKTOP RESPONSIVE (BLOXLUCK STYLE) ===== */
     @media (min-width: 768px) {
       body {
         display: flex;
@@ -2296,7 +2316,7 @@
                   <span class="history-player-name">${m.creatorName}</span>
                   <div class="history-items-strip">
                     ${(m.items || []).map(i => `
-                      <div class="history-item-icon" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
+                      <div class="history-item-icon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
                         <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
                       </div>
                     `).join('')}
@@ -2313,7 +2333,7 @@
                   <span class="history-player-name">${m.opponent?.name || 'Opponent'}</span>
                   <div class="history-items-strip">
                     ${(m.opponentItems || []).map(i => `
-                      <div class="history-item-icon" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
+                      <div class="history-item-icon" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
                         <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
                       </div>
                     `).join('')}
@@ -2330,7 +2350,7 @@
           </div>`;
         }
 
-        // Düzgün Hizalı Kart Tasarımı (Siyah-Beyaz Join butonu ve nizami D çipi)
+        // Bloxluck Birebir Kart Tasarımı (Görsel 12)
         return `
         <div class="blox-duel-card">
           <div class="card-top-row">
@@ -2340,28 +2360,26 @@
               <span class="card-player-name">${m.creatorName}</span>
             </div>
             <div class="card-value-box">
-              <div style="display:flex; align-items:baseline; gap:6px;">
-                <span class="card-val-label">Value</span>
-                <span class="card-val-num">${matchVal.toLocaleString()}</span>
-              </div>
+              <span class="card-val-title">Value</span>
+              <span class="card-val-amount">${matchVal.toLocaleString()}</span>
               <span class="card-val-range">${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}</span>
             </div>
           </div>
 
-          <div class="card-items-row">
+          <div class="card-items-grid">
             ${(m.items || []).map(i => `
-              <div class="card-item-thumb" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
-                <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
-              </div>
+              <img src="${getItemImgUrl(i)}" class="card-item-img" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
             `).join('')}
           </div>
 
-          <div class="card-bottom-row">
+          <div class="card-action-wrap">
             ${isMy ? `
-              <button class="btn-blox-cancel" style="width:100%;" onclick="cancelMatch('${m.id}')">Cancel Match</button>
+              <button class="btn-card-cancel-bloxluck" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" title="Your Side: ${p2Side}">${p2Side}</span>
-              <button class="btn-blox-join" onclick="openJoinMatchModal('${m.id}')">Join Match (${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()})</button>
+              <div class="card-opp-chip-wrap">
+                <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" title="Play as ${p2Side}">${p2Side}</span>
+              </div>
+              <button class="btn-card-join-bloxluck" onclick="openJoinMatchModal('${m.id}')">Join Match (${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()})</button>
             `}
           </div>
         </div>`;
