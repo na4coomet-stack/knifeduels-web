@@ -1596,7 +1596,7 @@
             ${isMy ? `
               <button class="btn-card-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <button class="btn-card-join" onclick="handleJoinMatchClick('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
+              <button class="btn-card-join" onclick="openJoinMatchModal('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
             `}
           </div>
         </div>`;
@@ -1618,48 +1618,12 @@
       showToast("Match cancelled.", "info");
     }
 
-    // ===== FAST SELECT & VALUE MATCH SİSTEMİ =====
-    function handleJoinMatchClick(matchId) {
+    // ===== MANUEL SEÇİM JOIN MODALI & INLINE ERROR =====
+    function openJoinMatchModal(matchId, errorMessage = '') {
       if (!currentUser) return openAuthModal();
       const m = matches.find(x => x.id === matchId);
       if (!m) return showToast("Match not found!", "error");
       if (!fullInventory.length) return showToast("Your inventory is empty!", "error");
-
-      const targetVal = m.value;
-
-      // 1. Fast Select: Envanterden tam değeri tutturacak veya en yakın eşyayı otomatik bul
-      let chosenItems = [];
-      let currentSum = 0;
-
-      // Önce tam değeri eşitleyen tek bir eşya ara
-      let exactMatch = fullInventory.find(i => (i.value || 0) === targetVal);
-      if (exactMatch) {
-        chosenItems = [exactMatch];
-      } else {
-        // Otomatik küçükten büyüğe / büyükten küçüğe kombinasyon dene
-        let sorted = [...fullInventory].sort((a,b) => (b.value || 0) - (a.value || 0));
-        for (let item of sorted) {
-          if (currentSum < targetVal) {
-            chosenItems.push(item);
-            currentSum += (item.value || 0);
-          }
-        }
-      }
-
-      const totalChosenVal = chosenItems.reduce((s, i) => s + (i.value || 0), 0);
-
-      // Eğer otomatik seçim maç değerini karşılıyorsa MODAL AÇMADAN DİREK KATIL! (Fast Select)
-      if (totalChosenVal >= targetVal && chosenItems.length > 0) {
-        executeJoinMatch(m.id, chosenItems);
-      } else {
-        // Eğer değer yetmiyorsa modalı aç ve hatayı O SEKMEDE (modal içinde) göster
-        openJoinMatchModal(matchId, `⚠️ Insufficient value! Match requires ${targetVal.toLocaleString()}, but your inventory total is ${totalChosenVal.toLocaleString()}.`);
-      }
-    }
-
-    function openJoinMatchModal(matchId, errorMessage = '') {
-      const m = matches.find(x => x.id === matchId);
-      if (!m) return;
 
       pendingJoinMatchId = matchId;
       joinSelectedIds = new Set();
@@ -1741,14 +1705,6 @@
         return;
       }
 
-      executeJoinMatch(m.id, chosenItems);
-      closeJoinMatchModal();
-    }
-
-    function executeJoinMatch(matchId, chosenItems) {
-      const m = matches.find(x => x.id === matchId);
-      if (!m) return;
-
       const chosenIds = new Set(chosenItems.map(i => i.id));
       fullInventory = fullInventory.filter(i => !chosenIds.has(i.id));
       filteredInventory = [...fullInventory];
@@ -1763,6 +1719,7 @@
         }));
       }
 
+      closeJoinMatchModal();
       showToast("Joined match! Rolling duel...", "success");
     }
 
