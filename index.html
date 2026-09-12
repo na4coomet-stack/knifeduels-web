@@ -98,7 +98,7 @@
     .tt-card-unread.show { display: inline-flex; }
     .tt-card-time { font-size: 0.68rem; color: #475569; }
 
-    /* LEADERBOARD PANEL (FIXED) */
+    /* LEADERBOARD PANEL */
     .lb-tab { flex: 1; padding: 8px 4px; background: #0f141d; border: 1.5px solid #1e2634; border-radius: 8px; font-size: 0.72rem; font-weight: 800; color: #64748b; cursor: pointer; text-align: center; transition: all 0.15s; white-space: nowrap; }
     .lb-tab.active { background: #1e293b; border-color: #38bdf8; color: #ffffff; }
     .lb-row { display: flex; align-items: center; gap: 8px; background: #121824; border: 1.5px solid #1e2634; border-radius: 10px; padding: 8px 10px; position: relative; transition: border-color 0.15s; }
@@ -311,12 +311,6 @@
     .verme-tab { flex:1; padding:9px; background:#141a24; border:1.5px solid #1e2634; border-radius:8px; font-size:0.8rem; font-weight:900; color:#64748b; cursor:pointer; text-align:center; transition:all 0.15s; }
     .verme-tab.active { background:#1e0a3c; border-color:#7c3aed; color:#a855f7; }
     .verme-loading { text-align:center; padding:30px 0; color:#64748b; font-size:0.85rem; }
-
-    /* FOOTER */
-    .kd-footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); background: #070a0f; border-top: 1.5px solid #131b26; border-left: 1.5px solid #131b26; border-right: 1.5px solid #131b26; border-radius: 14px 14px 0 0; padding: 10px 12px; display: flex; gap: 8px; align-items: center; z-index: 90; width: 100%; max-width: 480px; }
-    .kd-footer-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: #0f141d; border: 1.5px solid #1e2634; border-radius: 10px; padding: 9px 6px; cursor: pointer; color: #64748b; font-size: 0.62rem; font-weight: 900; text-align: center; transition: all 0.15s; }
-    .kd-footer-btn:hover, .kd-footer-btn.active { border-color: #ffffff; color: #ffffff; background: #131c29; }
-    .kd-footer-btn svg { width: 20px; height: 20px; }
 
     /* TICKET CHATS */
     .ticket-chat-box { height: 260px; overflow-y: auto; background: #070a0f; border: 1.5px solid #1c2331; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
@@ -691,6 +685,24 @@
     </div>
   </div>
 
+  <!-- JOIN MATCH VALUE-MATCH SELECTION MODAL -->
+  <div class="modal-overlay" id="joinMatchModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Join Duel</h2>
+        <button class="btn-close" onclick="closeJoinMatchModal()">✕</button>
+      </div>
+      <div style="background:#141a24; padding:10px 12px; border-radius:10px; border:1.5px solid #1e2634; margin-bottom:12px;">
+        <div style="font-size:0.8rem; color:#94a3b8; font-weight:800;">Target Match Value:</div>
+        <div style="font-size:1.15rem; font-weight:900; color:#facc15;" id="joinTargetValDisplay">0 Value</div>
+        <div style="font-size:0.75rem; color:#38bdf8; font-weight:800; margin-top:4px;" id="joinSelectedValDisplay">Your Selected: 0 Value</div>
+      </div>
+      <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Select items from your inventory to match or exceed the wager value:</p>
+      <div class="modal-items-grid" id="joinItemsPicker"></div>
+      <button class="blox-btn-primary" id="btnConfirmJoinDuel" style="width:100%; padding:14px;" onclick="confirmJoinMatchWager()">CONFIRM & DUEL</button>
+    </div>
+  </div>
+
   <!-- 3D ROLLING ARENA -->
   <div class="bloxluck-arena-overlay" id="bloxluckArena">
     <div class="arena-main-card">
@@ -782,7 +794,6 @@
       return _origFetch(url, options);
     };
 
-    // Universal Avatar Fixer
     function handleAvatarError(el, name) {
       el.onerror = null;
       const clean = (name || 'User').replace(/[^a-zA-Z0-9]/g, '');
@@ -809,14 +820,20 @@
     let filteredInventory = [];
     let displayedCount = 30;
     let tickets = [];
-    let blackWins = 0;
-    let whiteWins = 0;
+    
+    // K/D Skorlarının Kalıcı Yüklenmesi
+    let blackWins = parseInt(localStorage.getItem('kd_k_wins') || '0', 10);
+    let whiteWins = parseInt(localStorage.getItem('kd_d_wins') || '0', 10);
+
     let activeGiveaway = null;
     let gwTimerInterval = null;
     let handledDuelIds = new Set();
     let currentAdminViewingTicketId = null;
 
-    // ===== NOTIFICATION BADGE SYSTEM =====
+    // Join Match Seçim State'i
+    let pendingJoinMatchId = null;
+    let joinSelectedIds = new Set();
+
     let menuUnreadCount = 0;
     let ticketUnreadMap = {};
     let seenTicketIds = new Set();
@@ -854,7 +871,6 @@
       ticketUnreadMap = {};
     }
 
-    // ===== SIDE NAV TAB SWITCHING =====
     let currentSideTab = 'chat';
 
     function switchSideTab(tab) {
@@ -888,7 +904,6 @@
       }
     }
 
-    // ===== RENDER TICKET TRANSACTIONS PANEL =====
     function renderTicketTransactions() {
       const container = document.getElementById('ttListContainer');
       if (!container) return;
@@ -999,6 +1014,10 @@
       setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
+    function getProfitStorageKey() {
+      return 'kd_profit_' + (currentUser ? currentUser.name.toLowerCase() : 'guest');
+    }
+
     async function loadUserDataFromServer(username) {
       if (!username) return;
       try {
@@ -1009,20 +1028,30 @@
           filteredInventory = [...fullInventory];
           displayedCount = 30;
           renderInventory();
-          const savedProfit = typeof data.userData.profit === 'number' ? data.userData.profit : 0;
-          localStorage.setItem('kd_profit', savedProfit.toString());
+          
+          let savedProfit = 0;
+          if (typeof data.userData.profit === 'number') {
+            savedProfit = data.userData.profit;
+          } else {
+            savedProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+          }
+          localStorage.setItem(getProfitStorageKey(), savedProfit.toString());
           updateProfitUI(savedProfit);
         }
-      } catch (e) {}
+      } catch (e) {
+        const localP = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+        updateProfitUI(localP);
+      }
     }
 
     function updateProfitUI(val) {
       const pEl = document.getElementById('profitDisplay');
-      if (pEl) pEl.innerText = val.toLocaleString();
+      if (pEl) pEl.innerText = (val || 0).toLocaleString();
     }
 
     async function syncUserDataToServer(newProfit) {
       if (!currentUser) return;
+      localStorage.setItem(getProfitStorageKey(), newProfit.toString());
       try {
         await fetch('/api/sync-user', {
           method: 'POST',
@@ -1033,14 +1062,23 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+      // Skorları Ekrana Yaz
+      document.getElementById('blackCount').innerText = blackWins;
+      document.getElementById('whiteCount').innerText = whiteWins;
+
       const savedUser = localStorage.getItem('kd_user');
       if (savedUser) {
         try {
           currentUser = JSON.parse(savedUser);
           renderLoggedInState();
+          const initP = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+          updateProfitUI(initP);
           await loadUserDataFromServer(currentUser.name);
         } catch (e) {}
+      } else {
+        updateProfitUI(0);
       }
+
       fetchInitialMatches();
       fetchInitialTickets();
       fetchInitialGiveaway();
@@ -1344,7 +1382,7 @@
       fullInventory = fullInventory.filter(i => !removedIds.has(i.id));
       filteredInventory = [...fullInventory];
       renderInventory();
-      syncUserDataToServer(parseInt(localStorage.getItem('kd_profit') || '0', 10));
+      syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
 
       tickets.unshift(newTicket);
       if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'create_ticket', ticket: newTicket }));
@@ -1560,7 +1598,7 @@
             ${isMy ? `
               <button class="btn-card-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <button class="btn-card-join" onclick="joinMatchDirect('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
+              <button class="btn-card-join" onclick="openJoinMatchModal('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
             `}
           </div>
         </div>`;
@@ -1582,22 +1620,94 @@
       showToast("Match cancelled.", "info");
     }
 
-    function joinMatchDirect(matchId) {
+    // ===== JOIN MATCH VALUE MATCH MODAL SİSTEMİ =====
+    function openJoinMatchModal(matchId) {
       if (!currentUser) return openAuthModal();
       const m = matches.find(x => x.id === matchId);
-      if (!m) return;
-      if (!fullInventory.length) return showToast("No items in inventory to wager!", "error");
-      const wagerItem = fullInventory[0];
-      fullInventory = fullInventory.filter(i => i.id !== wagerItem.id);
+      if (!m) return showToast("Match not found!", "error");
+      if (!fullInventory.length) return showToast("Your inventory is empty!", "error");
+
+      pendingJoinMatchId = matchId;
+      joinSelectedIds = new Set();
+
+      document.getElementById('joinTargetValDisplay').innerText = `${m.value.toLocaleString()} Value`;
+      document.getElementById('joinSelectedValDisplay').innerText = `Your Selected: 0 Value`;
+
+      const picker = document.getElementById('joinItemsPicker');
+      picker.innerHTML = fullInventory.slice(0, 40).map(item => `
+        <div class="modal-item-row-card" data-id="${item.id}" data-val="${item.value || 0}" onclick="toggleJoinSelection(this, '${item.id}')">
+          <div class="modal-item-row-left">
+            <div class="modal-item-row-icon">
+              <img src="${getItemImgUrl(item)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${item.name}')">
+            </div>
+            <div>
+              <div class="modal-item-row-name">${item.name}</div>
+              <div style="font-size:0.75rem; color:#facc15; font-weight:800;">Val: ${(item.value || 0).toLocaleString()}</div>
+            </div>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('joinMatchModal').style.display = 'flex';
+    }
+
+    function toggleJoinSelection(el, id) {
+      el.classList.toggle('is-selected');
+      if (joinSelectedIds.has(id)) {
+        joinSelectedIds.delete(id);
+      } else {
+        joinSelectedIds.add(id);
+      }
+      calculateJoinSelectedVal();
+    }
+
+    function calculateJoinSelectedVal() {
+      let total = 0;
+      fullInventory.forEach(i => {
+        if (joinSelectedIds.has(i.id)) total += (i.value || 0);
+      });
+      const m = matches.find(x => x.id === pendingJoinMatchId);
+      const target = m ? m.value : 0;
+      const display = document.getElementById('joinSelectedValDisplay');
+      display.innerText = `Your Selected: ${total.toLocaleString()} / ${target.toLocaleString()} Value`;
+      display.style.color = (total >= target && target > 0) ? '#22c55e' : '#38bdf8';
+    }
+
+    function closeJoinMatchModal() {
+      pendingJoinMatchId = null;
+      joinSelectedIds = new Set();
+      document.getElementById('joinMatchModal').style.display = 'none';
+    }
+
+    function confirmJoinMatchWager() {
+      if (!pendingJoinMatchId) return;
+      const m = matches.find(x => x.id === pendingJoinMatchId);
+      if (!m) return closeJoinMatchModal();
+
+      const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
+      const totalVal = chosenItems.reduce((s, i) => s + (i.value || 0), 0);
+
+      if (!chosenItems.length) return showToast("Select item(s) from your inventory to join!", "error");
+      if (totalVal < m.value) {
+        return showToast(`Insufficient value! Select at least ${m.value.toLocaleString()} value.`, "error");
+      }
+
+      // Envanterden eşyaları çıkar
+      const chosenIds = new Set(chosenItems.map(i => i.id));
+      fullInventory = fullInventory.filter(i => !chosenIds.has(i.id));
       filteredInventory = [...fullInventory];
       renderInventory();
+
       if (socket && socket.readyState === 1) {
         socket.send(JSON.stringify({
-          type: 'join_match', matchId: m.id,
+          type: 'join_match',
+          matchId: m.id,
           opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-          opponentItems: [wagerItem]
+          opponentItems: chosenItems
         }));
       }
+
+      closeJoinMatchModal();
+      showToast("Joined match! Rolling duel...", "success");
     }
 
     function playDuel(duel) {
@@ -1607,6 +1717,7 @@
       if (!isCreator && !isOpponent) return;
 
       closeCreateMatchModal();
+      closeJoinMatchModal();
       const arena = document.getElementById('bloxluckArena');
       const coin = document.getElementById('flipperCoin');
 
@@ -1646,7 +1757,15 @@
           document.getElementById('boxPlayer2').classList.add('winner');
           document.getElementById('boxPlayer1').classList.add('loser');
         }
-        if (duel.winnerSide === 'K') blackWins++; else whiteWins++;
+        
+        // K/D Skorlarını Arttır ve Kalıcı Kaydet
+        if (duel.winnerSide === 'K') {
+          blackWins++;
+          localStorage.setItem('kd_k_wins', blackWins.toString());
+        } else {
+          whiteWins++;
+          localStorage.setItem('kd_d_wins', whiteWins.toString());
+        }
         document.getElementById('blackCount').innerText = blackWins;
         document.getElementById('whiteCount').innerText = whiteWins;
 
@@ -1654,11 +1773,19 @@
         const matchVal = parseInt(duel.value, 10) || 0;
         const allLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
 
-        let curProfit = parseInt(localStorage.getItem('kd_profit') || '0', 10);
-        if (userWon) { curProfit += matchVal; fullInventory.push(...allLoot); } else { curProfit -= matchVal; }
-        localStorage.setItem('kd_profit', curProfit.toString());
+        // Profit Hesapla ve Kalıcı Kaydet
+        let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+        if (userWon) { 
+          curProfit += matchVal; 
+          fullInventory.push(...allLoot); 
+        } else { 
+          curProfit -= matchVal; 
+        }
+        
+        localStorage.setItem(getProfitStorageKey(), curProfit.toString());
         updateProfitUI(curProfit);
         syncUserDataToServer(curProfit);
+
         filteredInventory = [...fullInventory];
         renderInventory();
 
@@ -1906,7 +2033,10 @@
       updateAllTicketCounters();
     }
 
-    function logout() { localStorage.removeItem('kd_user'); location.reload(); }
+    function logout() { 
+      localStorage.removeItem('kd_user'); 
+      location.reload(); 
+    }
 
     function toggleProfileDropdown() { document.getElementById('profileDropdown')?.classList.toggle('active'); }
     function openCoinflipView() { hideAll(); document.getElementById('matches-view').style.display = 'block'; }
@@ -2432,7 +2562,7 @@
         });
         await fetch('/api/sync-user', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username: currentUser.name, inventory: fullInventory, profit: parseInt(localStorage.getItem('kd_profit')||'0',10) })
+          body: JSON.stringify({ username: currentUser.name, inventory: fullInventory, profit: parseInt(localStorage.getItem(getProfitStorageKey())||'0',10) })
         });
         if (socket && socket.readyState === 1) {
           socket.send(JSON.stringify({
@@ -2451,7 +2581,7 @@
       renderVermePanels();
     }
 
-    // ===== LEADERBOARD (FIXED) =====
+    // ===== LEADERBOARD =====
     let currentLbTab = 'profit';
 
     function switchLbTab(tab) {
@@ -2493,7 +2623,7 @@
 
       if (currentUser) {
         const myKey = currentUser.name.toLowerCase();
-        const myProfit = parseInt(localStorage.getItem('kd_profit') || '0', 10);
+        const myProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
         if (!profileMap[myKey]) {
           profileMap[myKey] = {
             name: currentUser.name,
