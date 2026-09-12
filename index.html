@@ -9,12 +9,12 @@
     body { background-color: #05070a; color: #ffffff; min-height: 100vh; padding-bottom: 50px; overflow-x: hidden; pointer-events: auto !important; }
 
     header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background-color: #0b0e14; border-bottom: 1.5px solid #1c222e; position: sticky; top: 0; z-index: 50; }
-    .kd-brand-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+    .kd-brand-logo { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; flex-shrink: 0; }
     .kd-logo-kd { width: 44px; height: 44px; background: linear-gradient(135deg, #18202c 0%, #06080c 100%); border: 2px solid #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 900; font-style: italic; color: #ffffff; box-shadow: 0 0 15px rgba(255,255,255,0.25); letter-spacing: -1px; }
     .kd-logo-kd span { color: #888; }
-    .kd-brand-text { display: ; flex-direction: column; line-height: 1; }
-    .kd-brand-title { font-size: 1.2rem; font-weight: 900; font-style: italic; color: #ffffff; letter-spacing: -0.5px; }
-    .kd-brand-sub { font-size: 0.62rem; font-weight: 800; color: #8b9bb4; letter-spacing: 1.5px; }
+    .kd-brand-text { display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: flex-start !important; line-height: 1.1 !important; flex-shrink: 0 !important; }
+    .kd-brand-title { font-size: 1.25rem !important; font-weight: 900 !important; font-style: italic !important; color: #ffffff !important; letter-spacing: -0.5px !important; white-space: nowrap !important; display: block !important; margin: 0 !important; padding: 0 !important; }
+    .kd-brand-sub { font-size: 0.65rem !important; font-weight: 800 !important; color: #8b9bb4 !important; letter-spacing: 1.5px !important; white-space: nowrap !important; display: block !important; margin-top: 3px !important; padding: 0 !important; }
 
     .header-right { display: flex; align-items: center; gap: 10px; z-index: 60; }
     .btn-header-mono { background-color: #ffffff; border: 1px solid #ffffff; border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #000000; box-shadow: 0 2px 10px rgba(255,255,255,0.15); position: relative; }
@@ -277,6 +277,10 @@
     .modal-item-row-name { font-size: 0.95rem; font-weight: 900; color: #fff; font-style: italic; }
 
     .bloxluck-arena-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 7, 10, 0.96); backdrop-filter: blur(14px); justify-content: center; align-items: center; z-index: 1000000 !important; padding: 16px; }
+    .btn-close-arena { position: absolute; top: 16px; right: 16px; background: #1a2230; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; z-index: 1000005; transition: all 0.15s ease; }
+    .btn-close-arena:hover { color: #ffffff; border-color: #ef4444; background: #450a0a; }
+    .result-popup-overlay { z-index: 1000005 !important; }
+    .result-popup-card { z-index: 1000006 !important; }
     .arena-duelists { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px; }
     .duelist-box { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; padding: 12px 8px; border-radius: 14px; background-color: #07090e; border: 2px solid #1e2634; transition: all 0.35s ease; }
     .duelist-box.winner { border-color: #ffffff !important; box-shadow: 0 0 25px rgba(255,255,255,0.4); background-color: #171f2c; }
@@ -1104,7 +1108,8 @@
   </div>
 
   <div class="bloxluck-arena-overlay" id="bloxluckArena">
-    <div class="arena-main-card">
+    <div class="arena-main-card" style="position:relative;">
+      <button class="btn-close-arena" onclick="emergencyCloseArena()" title="Close Arena">✕</button>
       <div style="font-size:0.8rem; font-weight:800; color:#64748b; margin-bottom:16px;">COINFLIP DUEL</div>
       <div class="arena-duelists">
         <div class="duelist-box" id="boxPlayer1">
@@ -1191,6 +1196,24 @@
 
     const MASTER_SECRETS_CATALOG = ["Griffin", "Dragon Aquanini", "Dragon Gingerini", "Hydra Dragon Cannelloni", "Signore Carapace", "Dragon Cannelloni", "Moby Bros", "Love Love Bear", "Arcadragon", "Kraken", "Digi Narwhal", "La Supreme Combinasion", "Elefanto Frigo", "Hydra Bunny", "Celestial Pegasus", "Cerberus", "Jelly Moby", "Venuspino", "Bumbatron", "Popcuru and Fizzuru", "Bunny and Eggy", "Rosey and Teddy", "La Breakfast Combinasion", "Capitano Moby", "Orchidox", "Cooki and Milki", "Burguro and Fryuro", "Los Secret Combinasionas", "Ketupat Bros", "Reinito Sleighito", "Pizza and Ranch", "Los Amigos", "Fortunu and Cashuru", "Pancake and Syrup", "La Secret Combinasion", "Antonio", "Fishino Clownino", "Kalika Bros", "Foxini Lanternini", "Los Sekolahs", "Sammyni Truckini", "Cash or Card", "Fragrama and Chocrama", "La Casa Boo", "La Fuse Machine", "Los Admins", "La Food Combinasion", "Duggy Bros", "Yetimatic", "S'more Serat", "Sammyni Cakini", "Boppin Bunny", "Spooky and Pumpky", "Cangurato Gelato", "Ginger Gerat", "Los Hackers", "Los Chillis", "La Ginger Sekolah", "Rubiko and Kubiko", "Capitano Americano", "Bearito Cabinito", "Sammyni Fattini", "Los Spaghettis", "Rubrikiko", "Examen Bros", "Festive 67", "Guest 666", "Ventoliero Pavonero", "Queen Bee", "Quackini Snackini", "Pop Pop Petalini", "Grabatron", "Spaghetti Tualetti", "La Summer Grande", "Cloverat Clapat", "Los Tictacs", "Candini Fluffini", "Polaroidini", "Hopilikalika Hopilikalako", "Caylusaurus", "Steakini Fattini", "La Easter Grande", "Garama and Madundung", "Rosetti Tualetti", "La Anniversary Grande", "Nacho Spyder", "Nachorilla", "Scorpino Coasterino", "Money Money Bros", "Lavadorito Spinito", "Gold Gold Gold", "Jolly Jolly Sahur", "Rico Dinero", "Ketchuru and Musturu", "Tirilikalika Tirilikalako", "Gym Bros", "Los Tangcitos", "Swaggy Bros", "Orcaledon", "La Lucky Grande", "La Romantic Grande", "Tictac Sahur", "Ketupat Kepat", "Dug dug dug", "La Taco Combinasion", "Tang Tang Keletang", "Coco and Mango", "Abyssaloco", "Noo my Resume", "Noo my Examen", "Esok Goala", "Fragola La La La", "Lovin Rose", "Los Tacoritas", "Bufalino Boomberino", "Honey Honey Bear", "Eviledon", "Puffino Builderino", "Los Primos", "Esok Sekolah", "Sand Sand Sand", "Los Mariachis", "La Jolly Grande", "Los Cupids", "W or L", "Los Puggies", "Noodle Noodle Poodle", "Gobblino Uniciclino", "Globa Steppa", "Tralaledon", "Tacoturbo Tacorito", "Tuff Toucan", "Mieteteira Bicicleteira", "Money Money Reindeer", "Chipso and Queso", "Chillin Chili", "La Spooky Grande", "Bacuru and Egguru", "Los Bros", "La Extinct Grande", "Los Candies", "Los Fruits", "Celularcini Viciosini", "Los 67", "Capitano Gullini", "Los Mobilis", "Money Money Puggy", "Churrito Bunnito", "Cigno Fulgoro", "Frullato Framingo", "Los Jolly Combinasionas", "Los Spooky Combinasionas", "Los Hotspotsitos", "Peschito Machito", "Chicleteira Champeona", "Snailo Clovero", "Los Planitos", "Girafini Raftini", "DJ Panda", "Chicleteira Cupideira", "Las Sis", "Spinny Hammy", "Camera Ramena", "Motorino Bumbino", "Tacorita Bicicleta", "Los Sweethearts", "Baskito", "Chicleteira Surfeiteira", "Bananito", "Los Combinasionas", "Nuclearo Dinossauro", "Chicleteira Noelteira", "Gattino Hydrantino", "Chimnino", "Noo my Gold", "Noo my Heart", "Swag Soda", "Mariachi Corazoni", "Pogo Pogo Penguin", "Tacorillo Crocodillo", "La Grande Combinasion", "Conetto Morsetto", "Los 25", "Los Burritos", "Sushi Inu", "Sir Mangus", "67", "John Doe", "Donkeyturbo Express", "Los Chicleteiras", "Noo my Eggs", "Burrito Bat", "Syrup Samurai", "Strawberrita", "Ombrello Topolino", "Los Mi Gatitos", "Rang Ring Bus", "Flipa Sandala", "Noo my Present", "Los Nooo My Hotspotsitos", "Serafinna Medusella", "Var Var Var", "Arcadopus", "Gub", "Noo my Candy", "Los Quesadillas", "Futbolini Skatini", "Los Bunitos", "Aquarino", "Chicleteirina Bicicleteirina", "Granny", "Burrito Bandito", "Chill Puppy", "Luck Luck Luck Sahur", "4th Bros", "Flancito", "Chicleteira Bicicleteira", "Brunito Marsito", "Quesadillo Vampiro", "Cupid Hotspot", "Eid Eid Eid Sahur", "Octoball", "Mi Gatito", "Ho Ho Ho Sahur", "Rosatops Triceratino", "Los Cornis", "Cupid Cupid Sahur", "Quesadilla Crocodila", "Bunito Bunito Spinito", "Rocketini Frostini", "Pot Pumpkin", "Naughty Naughty", "Buho De Volto", "Horegini Boom", "Ref Ref Ref Sahur", "Santa Hotspot", "Pot Hotspot", "25", "Pirulitoita Bicicleteira", "Gelatina Volatina", "Glaciator", "Los Sigmas", "To to to Sahur", "Toro Españolo", "Bunny Bunny Bunny Sahur", "Yess My Resume", "La Sahur Combinasion", "Telemorte", "List List List Sahur", "Nooo My Hotspot", "Berryno", "Los Jobcitos", "Bunnyman", "Gelato Lumacho", "Cuadramat and Pakrahmatmamat", "Craburger", "Please my Present", "Easter Easter Easter Sahur", "Hippo Golazo", "Los Cucarachas", "1x1x1x1", "La Vacca Lepre Lepreino", "Bombardiro Vaccariro", "Graipuss Medussi", "Love Love Love Sahur", "Perrito Burrito", "Giftini Spyderini", "Honey Honey Narwhal", "GOAT", "Paradiso Axolottino", "Trickolino", "Triplito Tralaleritos", "Buntteo", "La Vacca Jacko Linterino", "Fishboard", "Santteo", "Las Vaquitas Saturnitas", "Los Karkeritos", "Karker Sahur", "Job Job Job Sahur", "Los Trios", "Frankentteo", "Las Tralaleritas", "Rocco Disco", "Pumpkini Spyderini", "Extinct Matteo", "La Karkerkar Combinasion", "Reindeer Tralala", "La Vacca Prese Presente", "Yess my Examen", "Guerriro Digitale", "Boatito Auratito", "Los Tralaleritos", "Vulturino Skeletono", "Los Tortus", "Zombie Tralala", "La Cucaracha", "Extinct Tralalero", "Los Spyderinis", "Agarrini la Palini", "Chachechi", "Blackhole Goat", "Dul Dul Dul", "Torrtuginni Dragonfrutini", "Trenostruzzo Turbo 4000", "La Vacca Saturno Saturnita", "Bisonte Giuppitere", "Karkerkar Kurkur", "Los Matteos", "Sammyni Spyderini", "Jackorilla"];
     let vermeCatalogSearchFilter = "";
+
+    
+    function parseCleanNumber(val) {
+      if (typeof val === 'number') return isNaN(val) ? 0 : Math.round(val);
+      if (!val) return 0;
+      const cleanStr = String(val).replace(/[^0-9]/g, '');
+      return parseInt(cleanStr, 10) || 0;
+    }
+
+    function emergencyCloseArena() {
+      if (window._arenaSafetyTimer) { clearTimeout(window._arenaSafetyTimer); window._arenaSafetyTimer = null; }
+      const arena = document.getElementById('bloxluckArena');
+      if (arena) arena.style.display = "none";
+      const coin = document.getElementById('flipperCoin');
+      if (coin) coin.classList.remove('spin-k', 'spin-d');
+      renderMatches();
+      renderInventory();
+    }
 
     function handleAvatarError(el, name) {
       el.onerror = null;
@@ -2386,11 +2409,19 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       const m = matches.find(x => x.id === pendingJoinMatchId);
       if (!m) return closeJoinMatchModal();
 
-      const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
-      const totalVal = chosenItems.reduce((s, i) => s + (typeof i.value === 'number' && i.value > 0 ? i.value : 100000000), 0);
       const errBox = document.getElementById('joinMatchErrorBox');
 
-      const matchTarget = Number(m.value) || 100000000;
+      // Socket baglanti kontrolu (kopukken esyalarin silinmesini onle)
+      if (!socket || socket.readyState !== 1) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Connection issue! Reconnecting... Please try again in a moment.';
+        return;
+      }
+
+      const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
+      const totalVal = chosenItems.reduce((s, i) => s + (parseCleanNumber(i.value) || 100000000), 0);
+
+      const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
 
@@ -2410,16 +2441,26 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
 
-      const chosenIds = new Set(chosenItems.map(i => i.id));
-      fullInventory = fullInventory.filter(i => !chosenIds.has(i.id));
+      // Index bazli kaldirma (ayni ID'ye sahip birden fazla itemin hepsinin silinmesini onler)
+      const usedIndices = new Set();
+      for (const item of chosenItems) {
+        const idx = fullInventory.findIndex((invItem, j) => !usedIndices.has(j) && (invItem.id === item.id || invItem === item));
+        if (idx !== -1) usedIndices.add(idx);
+      }
+      fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
       filteredInventory = [...fullInventory];
       renderInventory();
       syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
 
+      const normChosenItems = chosenItems.map(item => ({
+        ...item,
+        value: parseCleanNumber(item.value) || 100000000
+      }));
+
       let joinedMatchCopy = {
         ...m,
         opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-        opponentItems: chosenItems
+        opponentItems: normChosenItems
       };
 
       let userSaved = getMySavedMatches();
@@ -2427,13 +2468,21 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       userSaved.unshift(joinedMatchCopy);
       saveMySavedMatches(userSaved);
 
-      if (socket && socket.readyState === 1) {
+      try {
         socket.send(JSON.stringify({
           type: 'join_match',
           matchId: m.id,
           opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-          opponentItems: chosenItems
+          opponentItems: normChosenItems
         }));
+      } catch (err) {
+        // Hata durumunda esyalari geri iade et
+        fullInventory.push(...normChosenItems);
+        filteredInventory = [...fullInventory];
+        renderInventory();
+        syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+        showToast("Connection error, items returned!", "error");
+        return;
       }
 
       closeJoinMatchModal();
@@ -2457,30 +2506,48 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       p1Av.src = getSafeAvatar(duel.creatorAvatar, duel.creatorName);
       p1Av.onerror = function() { handleAvatarError(this, duel.creatorName); };
       document.getElementById('arenaP1Name').innerText = duel.creatorName;
-      document.getElementById('arenaP1Val').innerText = `${(Number(duel.value) || 100000000).toLocaleString()} Val`;
-      document.getElementById('arenaP1Chip').innerText = duel.side;
-      document.getElementById('arenaP1Chip').className = `chip ${duel.side === 'K' ? 'chip-black' : 'chip-white'}`;
+      
+      const cleanMatchVal = parseCleanNumber(duel.value) || 100000000;
+      document.getElementById('arenaP1Val').innerText = `${cleanMatchVal.toLocaleString()} Val`;
+      
+      const p1Side = String(duel.side || 'K').toUpperCase().trim();
+      const oppSide = p1Side === 'K' ? 'D' : 'K';
+      
+      document.getElementById('arenaP1Chip').innerText = p1Side;
+      document.getElementById('arenaP1Chip').className = `chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}`;
 
-      const oppSide = duel.side === 'K' ? 'D' : 'K';
       const p2Av = document.getElementById('arenaP2Avatar');
       p2Av.src = getSafeAvatar(duel.opponent?.avatar, duel.opponent?.name || 'Player');
       p2Av.onerror = function() { handleAvatarError(this, duel.opponent?.name || 'Player'); };
-      document.getElementById('arenaP2Name').innerText = duel.opponent.name;
-      document.getElementById('arenaP2Val').innerText = `${(Number(duel.value) || 100000000).toLocaleString()} Val`;
+      document.getElementById('arenaP2Name').innerText = duel.opponent?.name || 'Opponent';
+      document.getElementById('arenaP2Val').innerText = `${cleanMatchVal.toLocaleString()} Val`;
       document.getElementById('arenaP2Chip').innerText = oppSide;
       document.getElementById('arenaP2Chip').className = `chip ${oppSide === 'K' ? 'chip-black' : 'chip-white'}`;
 
       document.getElementById('boxPlayer1').className = "duelist-box";
       document.getElementById('boxPlayer2').className = "duelist-box";
 
+      // Reset coin animations to prevent stuck coins
       coin.className = "flipper-coin";
+      coin.classList.remove('spin-k', 'spin-d');
       void coin.offsetWidth;
       arena.style.display = "flex";
 
-      setTimeout(() => { coin.classList.add(duel.winnerSide === 'K' ? 'spin-k' : 'spin-d'); }, 50);
+      // 6.5 saniyelik guvenlik zamanlayicisi (arena asla takilip kalmasin)
+      if (window._arenaSafetyTimer) clearTimeout(window._arenaSafetyTimer);
+      window._arenaSafetyTimer = setTimeout(() => {
+        emergencyCloseArena();
+      }, 6500);
+
+      const winnerSide = String(duel.winnerSide || 'K').toUpperCase().trim();
+      setTimeout(() => { 
+        coin.classList.add(winnerSide === 'K' ? 'spin-k' : 'spin-d'); 
+      }, 50);
 
       setTimeout(() => {
-        const creatorWon = duel.winnerSide === duel.side;
+        if (window._arenaSafetyTimer) { clearTimeout(window._arenaSafetyTimer); window._arenaSafetyTimer = null; }
+
+        const creatorWon = (winnerSide === p1Side);
         if (creatorWon) {
           document.getElementById('boxPlayer1').classList.add('winner');
           document.getElementById('boxPlayer2').classList.add('loser');
@@ -2489,7 +2556,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           document.getElementById('boxPlayer1').classList.add('loser');
         }
         
-        if (duel.winnerSide === 'K') {
+        if (winnerSide === 'K') {
           blackWins++;
           localStorage.setItem('kd_k_wins', blackWins.toString());
         } else {
@@ -2499,16 +2566,22 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         document.getElementById('blackCount').innerText = blackWins;
         document.getElementById('whiteCount').innerText = whiteWins;
 
-        const userWon = isCreator ? (duel.winnerSide === duel.side) : (duel.winnerSide !== duel.side);
-        const matchVal = parseInt(duel.value, 10) || 100000000;
-        const allLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
+        const userWon = isCreator ? creatorWon : !creatorWon;
+
+        // Her ganimete benzersiz ID ata (ayni ID cakismasini onle)
+        const rawLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
+        const allLoot = rawLoot.map((item, idx) => ({
+          ...item,
+          id: 'loot_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
+          value: parseCleanNumber(item.value) || 100000000
+        }));
 
         let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
         if (userWon) { 
-          curProfit += matchVal; 
+          curProfit += cleanMatchVal; 
           fullInventory.push(...allLoot); 
         } else { 
-          curProfit -= matchVal; 
+          curProfit -= cleanMatchVal; 
         }
         
         localStorage.setItem(getProfitStorageKey(), curProfit.toString());
@@ -2528,7 +2601,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
         setTimeout(() => {
           arena.style.display = "none";
-          openResultPopup(userWon, matchVal);
+          coin.classList.remove('spin-k', 'spin-d');
+          openResultPopup(userWon, cleanMatchVal);
           renderMatches();
         }, 1100);
       }, 4200);
