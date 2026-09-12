@@ -139,7 +139,7 @@
     .btn-toggle-matches { background-color: #1a2230; color: #ffffff; border: 1px solid #334155; font-weight: 800; border-radius: 8px; padding: 8px; font-size: 0.8rem; cursor: pointer; }
 
     .matches-list { display: flex; flex-direction: column; gap: 12px; }
-    .empty-state { background-color: #0f141d; border: 1px dashed #202838; border-radius: 12px; padding: 34px 16px; text-align: center; color: #64748b; font-size: 0.85rem; }
+    .empty-state { background: linear-gradient(135deg, #0b0f17 0%, #0f141d 100%); border: 1.5px dashed #202838; border-radius: 12px; padding: 34px 16px; text-align: center; color: #64748b; font-size: 0.85rem; }
 
     .blox-duel-card { background: linear-gradient(135deg, #0f141d 0%, #131b26 100%); border: 1.5px solid #1e2634; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .blox-duel-card.is-finished { border-color: #334155; }
@@ -305,24 +305,229 @@
     .ticket-bubble.admin { align-self: flex-start; background: #000000; color: #ffffff; border: 1.5px solid #334155; }
     .ticket-bubble.system { align-self: stretch; background: #450a0a; color: #f87171; border: 1.5px solid #991b1b; font-size: 0.82rem; font-weight: 700; }
 
-    /* ===== DESKTOP RESPONSIVE ===== */
+    /* ===== DESKTOP RESPONSIVE (BLOXLUCK STYLE) ===== */
     @media (min-width: 768px) {
-      body { display: flex; flex-direction: column; align-items: center; }
-      header { width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 32px; }
-      .main-container { max-width: 580px; width: 100%; padding: 20px 16px; }
-      .side-nav-wrapper { width: 420px; max-width: 420px; }
-      .blox-duel-card { padding: 18px; }
-      .card-player-name { max-width: 220px; }
-      .controls-panel { padding: 16px 20px; }
-      .custom-popup-card, .modal-card, .arena-main-card, .result-popup-card, .ticket-log-card { max-width: 500px; }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+      
+      header {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        padding: 12px 36px;
+      }
+      
+      /* Ana container Bloxluck gibi genis ve ferah acilir */
+      .main-container {
+        max-width: 1160px;
+        width: 94%;
+        margin: 0 auto;
+        padding: 24px 0;
+      }
+      
+      /* Ust Kontrol Paneli: 2x2 yerine yatay Bloxluck dashboard bari */
+      .controls-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 22px;
+        border-radius: 14px;
+        margin-bottom: 16px;
+      }
+      
+      .controls-panel .btn-create-match {
+        padding: 12px 28px;
+        font-size: 0.92rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.2;
+      }
+      
+      .controls-panel .profit-box {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        background: #090d14;
+        padding: 9px 18px;
+        border-radius: 10px;
+        border: 1px solid #1c2331;
+      }
+      
+      .controls-panel .profit-box .title {
+        font-size: 0.8rem;
+      }
+      
+      .controls-panel .profit-box .profit-num {
+        font-size: 1.15rem;
+        margin-top: 0;
+      }
+      
+      .controls-panel .ratio-bar {
+        background: #090d14;
+        padding: 9px 16px;
+        border-radius: 10px;
+        border: 1px solid #1c2331;
+      }
+      
+      .controls-panel .btn-toggle-matches {
+        padding: 12px 20px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      /* Bloxluck Stili Genis Yatay Mac Kartlari */
+      .blox-duel-card {
+        padding: 14px 20px;
+        border-radius: 14px;
+        gap: 16px;
+      }
+      
+      .blox-duel-card:not(.is-finished) .card-players-col {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+      }
+      
+      .blox-duel-card .card-player-info {
+        min-width: 170px;
+        flex-shrink: 0;
+      }
+      
+      .blox-duel-card .card-avatar {
+        width: 34px;
+        height: 34px;
+      }
+      
+      .blox-duel-card .card-player-name {
+        font-size: 0.95rem;
+        max-width: 160px;
+      }
+      
+      .blox-duel-card:not(.is-finished) .card-items-preview {
+        padding-left: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 0;
+      }
+      
+      .blox-duel-card:not(.is-finished) .card-val-row {
+        padding-left: 0;
+        margin-bottom: 0;
+        min-width: 130px;
+        text-align: right;
+        flex-shrink: 0;
+        font-size: 0.85rem;
+      }
+      
+      .blox-duel-card:not(.is-finished) .card-val-row span {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #facc15;
+      }
+      
+      .blox-duel-card .card-action-col {
+        min-width: 130px;
+        flex-shrink: 0;
+      }
+      
+      .blox-duel-card .btn-card-join {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 0.88rem;
+        white-space: nowrap;
+      }
+      
+      .blox-duel-card .btn-card-cancel {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+
+      /* Biten maclarin masaustu gorunumu */
+      .blox-duel-card.is-finished {
+        padding: 16px 20px;
+      }
+      .blox-duel-card.is-finished .card-players-col {
+        gap: 10px;
+      }
+      .blox-duel-card.is-finished .card-player-row {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+      }
+      .blox-duel-card.is-finished .card-items-preview {
+        padding-left: 0;
+        flex: 1;
+      }
+      .blox-duel-card.is-finished .card-val-row {
+        padding-left: 0;
+        margin-bottom: 0;
+        min-width: 110px;
+        text-align: right;
+      }
+
+      /* Bos Mac Listesi Tasarimi */
+      .empty-state {
+        padding: 55px 24px;
+        border-radius: 16px;
+        font-size: 0.95rem;
+        background: linear-gradient(135deg, #0b0f17 0%, #0f141d 100%);
+        border: 1.5px dashed #222d3d;
+      }
+
+      /* Giveaway Banner */
+      .active-giveaway-banner {
+        padding: 18px 24px;
+        border-radius: 16px;
+        margin-bottom: 18px;
+      }
+      .gw-left-content {
+        gap: 18px;
+      }
+      .gw-item-icon {
+        width: 58px;
+        height: 58px;
+      }
+      .gw-title {
+        font-size: 1.2rem;
+      }
+      .gw-details-row {
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+      }
+      .btn-gw-join {
+        padding: 12px 28px;
+        font-size: 0.92rem;
+      }
+
+      /* Envanter Grid'i: Masaustunde genis 2-3 kolon */
+      .inventory-list-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 12px;
+      }
+      .inv-row-item {
+        margin-bottom: 0;
+      }
+
+      /* Yan menu & Modal boyutlari */
+      .side-nav-wrapper { width: 440px; max-width: 440px; }
+      .custom-popup-card, .modal-card, .arena-main-card, .result-popup-card, .ticket-log-card { max-width: 520px; }
       .blox-auth-card { max-width: 440px; }
       .ticket-chat-box { height: 340px; }
       .modal-items-grid { max-height: 340px; }
       .verme-items-list { max-height: 360px; }
-    }
-    @media (min-width: 1100px) {
-      .main-container { max-width: 680px; }
-      .side-nav-wrapper { width: 500px; max-width: 500px; }
     }
   </style>
 </head>
@@ -1147,7 +1352,6 @@
         socket = new WebSocket('wss://knifeduels-backend-2.onrender.com');
         socket.onopen = () => {
           _wsConnecting = false;
-          // Bağlantı kurulunca match/ticket listesini yenile
           fetchInitialMatches();
           fetchInitialTickets();
           fetchInitialGiveaway();
@@ -1155,7 +1359,6 @@
         socket.onclose = () => {
           _wsConnecting = false;
           socket = null;
-          // 3 saniye sonra yeniden bağlan
           _wsReconnectTimer = setTimeout(() => { setupWebSocket(); }, 3000);
         };
         socket.onerror = () => {
@@ -1211,8 +1414,6 @@
           } else if (data.type === 'duel_started') {
             const mIdx = matches.findIndex(m => m.id === data.match.id);
             if (mIdx !== -1) matches[mIdx] = data.match;
-            // FIX: userSaved'daki eski open kopyasını da güncelle
-            // (yan hesaptan join sonra creator hesabına geçince Cancel çıkmasını önler)
             let _saved = getMySavedMatches();
             const _sIdx = _saved.findIndex(m => m.id === data.match.id);
             if (_sIdx !== -1) {
@@ -1232,7 +1433,6 @@
               if (data.toast) showToast(data.toast, data.toastType || 'info');
             }
           } else if (data.type === 'cancel_rejected') {
-            // Server cancel'ı reddetti — maça biri katılmış
             showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
             let _s = getMySavedMatches();
             const _idx = _s.findIndex(m => m.id === data.matchId);
@@ -1566,7 +1766,16 @@
       if (myMatchesOnly) list = userSaved;
 
       if (!list.length) {
-        container.innerHTML = `<div class="empty-state">${myMatchesOnly ? "You haven't created or played any matches yet." : "No active matches available."}</div>`;
+        container.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size: 2.2rem; opacity: 0.7; margin-bottom: 4px;">⚔️</div>
+          <div style="font-weight: 800; color: #cbd5e1; font-size: 1rem;">
+            ${myMatchesOnly ? "You haven't created or played any matches yet." : "No active matches available."}
+          </div>
+          <div style="font-size: 0.8rem; color: #64748b;">
+            Click "Create Match" above to start a new duel!
+          </div>
+        </div>`;
         return;
       }
 
@@ -1642,15 +1851,12 @@
 
     function cancelMatch(matchId) {
       let userSaved = getMySavedMatches();
-      // FIX: global matches'tan da kontrol et — yan hesap join ettiyse burada opponent var
       const mGlobal = matches.find(x => x.id === matchId);
       const mSaved = userSaved.find(x => x.id === matchId);
       const m = mGlobal || mSaved;
 
-      // Maça biri join ettiyse veya bitmişse cancel'ı engelle
       if (m && (m.status === 'finished' || m.opponent)) {
         showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
-        // userSaved'daki stale 'open' kopyasını global state ile sync et
         if (mGlobal && mSaved) {
           userSaved = userSaved.map(x => x.id === matchId ? { ...mSaved, ...mGlobal } : x);
           saveMySavedMatches(userSaved);
@@ -1931,11 +2137,6 @@
       document.getElementById('sideSelectD').className = s === 'D' ? 'side-card active' : 'side-card';
     }
 
-    // =====================================================================
-    // FIX: confirmCreatedMatch - duplikasyon önlendi
-    // Önceki kodda aynı isme sahip item'lar birden fazla kez geliyordu.
-    // Şimdi her seçilen id sadece bir kez inventory'den alınır.
-    // =====================================================================
     function confirmCreatedMatch() {
       const selectedEls = document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected');
       const errBox = document.getElementById('createMatchErrorBox');
@@ -1946,7 +2147,6 @@
       }
       const chosenIds = Array.from(selectedEls).map(el => el.getAttribute('data-id'));
 
-      // Her id'yi inventory'de sadece bir kez bul (aynı isimli item'lar için duplikasyonu önler)
       const chosenItems = [];
       const usedIndices = new Set();
       for (const id of chosenIds) {
@@ -2273,7 +2473,6 @@
         || tickets.find(t => (t.user || "").toLowerCase() === myName);
       if (!myTicket) return showToast("Ticket bulunamadı!", "error");
       const msg = { sender: currentUser.name, text, time: new Date().toLocaleTimeString() };
-      // Lokale ekle — socket onayı beklenmeden anında görünsün
       if (!myTicket.messages) myTicket.messages = [];
       myTicket.messages.push(msg);
       renderUserTicketChat();
@@ -2281,7 +2480,7 @@
         socket.send(JSON.stringify({ type: 'ticket_message', ticketId: myTicket.id, message: msg }));
       } else {
         showToast("Bağlantı yok, mesaj gönderilemedi!", "error");
-        myTicket.messages.pop(); // başarısız olunca geri al
+        myTicket.messages.pop();
         renderUserTicketChat();
       }
       input.value = '';
@@ -2620,7 +2819,6 @@
       if (!entries.length) return showToast("Select at least one brainrot!", "error");
 
       const itemsToGive = [];
-      // Her item için kendi inventory'den gerçek objeleri al (sırayla)
       const myInvCopy = [...fullInventory];
       for (const [name, qty] of entries) {
         let taken = 0;
@@ -2631,7 +2829,6 @@
             taken++;
           }
         }
-        // Eğer inventory'de yeterli yoksa kalan kadarını yine de ver
         const shortage = qty - taken;
         if (shortage > 0) {
           const srcItem = fullInventory.find(i => i.name === name);
@@ -2646,7 +2843,6 @@
         }
       }
 
-      // Kendi inventory'den verilen itemleri çıkar
       fullInventory = myInvCopy;
       filteredInventory = [...fullInventory];
 
@@ -2657,12 +2853,10 @@
       const myProfit = parseInt(localStorage.getItem(getProfitStorageKey())||'0',10);
 
       try {
-        // Hedef kullanıcıyı güncelle
         await fetch('/api/sync-user', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ username: vermeTargetUser.name, inventory: vermeTargetUser.inventory, profit: vermeTargetUser.profit })
         });
-        // Kendi inventory'sini de güncelle
         await fetch('/api/sync-user', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ username: currentUser.name, inventory: fullInventory, profit: myProfit })
