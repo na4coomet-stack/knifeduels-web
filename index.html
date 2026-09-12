@@ -1592,18 +1592,36 @@
             matches = matches.filter(m => m.id !== data.matchId);
             renderMatches();
           } else if (data.type === 'duel_started') {
-            const mIdx = matches.findIndex(m => m.id === data.match.id);
-            if (mIdx !== -1) matches[mIdx] = data.match;
-            let _saved = getMySavedMatches();
-            const _sIdx = _saved.findIndex(m => m.id === data.match.id);
-            if (_sIdx !== -1) {
-              _saved[_sIdx] = { ..._saved[_sIdx], ...data.match };
-              saveMySavedMatches(_saved);
+            const duel = data.match;
+            const mIdx = matches.findIndex(m => m.id === duel.id);
+            if (mIdx !== -1) {
+              matches[mIdx] = duel;
+            } else {
+              matches.unshift(duel);
             }
+            let _saved = getMySavedMatches();
+            const _sIdx = _saved.findIndex(m => m.id === duel.id);
+            if (_sIdx !== -1) {
+              _saved[_sIdx] = { ..._saved[_sIdx], ...duel };
+            } else {
+              _saved.unshift(duel);
+            }
+            saveMySavedMatches(_saved);
+
+            const myName = (currentUser?.name || "").toLowerCase();
+            const isCreator = myName === (duel.creatorName || "").toLowerCase();
+            const isOpponent = myName === (duel.opponent?.name || "").toLowerCase();
+
+            if (isCreator) {
+              showToast(`⚔️ @${duel.opponent?.name || 'Player'} joined your duel! Live coin rolling...`, "success");
+            }
+
             renderMatches();
-            if (!handledDuelIds.has(data.match.id)) {
-              handledDuelIds.add(data.match.id);
-              playDuel(data.match);
+            if (!handledDuelIds.has(duel.id)) {
+              handledDuelIds.add(duel.id);
+              if (isCreator || isOpponent) {
+                playDuel(duel);
+              }
             }
           } else if (data.type === 'user_data_updated') {
             if (currentUser && currentUser.name.toLowerCase() === String(data.targetUser).toLowerCase()) {
@@ -1950,11 +1968,18 @@
       const myName = (currentUser?.name || "").toLowerCase();
       const userSaved = getMySavedMatches();
 
-      let list = myMatchesOnly
-        ? userSaved
-        : matches.filter(m => (m.status === 'open') && (m.creatorName || "").toLowerCase() !== myName);
-
-      if (myMatchesOnly) list = userSaved;
+      let list;
+      if (myMatchesOnly) {
+        list = userSaved;
+      } else {
+        // Ana listede tüm aktif maçlar (kendi açtığın dahil) ve son oynanan maçlar görünür
+        const map = new Map();
+        matches.forEach(m => map.set(m.id, m));
+        userSaved.slice(0, 10).forEach(m => {
+          if (!map.has(m.id)) map.set(m.id, m);
+        });
+        list = Array.from(map.values());
+      }
 
       if (!list.length) {
         container.innerHTML = `
@@ -2416,7 +2441,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     }
     function closeResultPopup() {
       document.getElementById('resultPopup').style.display = "none";
-      setTimeout(() => { location.reload(); }, 150);
+      renderMatches();
+      renderInventory();
     }
 
     function openAuthModal() {
@@ -2532,9 +2558,11 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
     async function verifyAdminPassword() {
       const p = document.getElementById('adminPasswordInput').value.trim();
-      const u = targetAdminUser || 'emirwg';
-      const isValid = (u === '26ktricky' && p === 'yeah123') ||
-                      ((u === 'emirwg' || u === 'bennaref') && (p === 'osuruk31' || p === 'knifeduelsokay12'));
+      const u = (targetAdminUser || 'emirwg').toLowerCase();
+      const isEmirOrBenna = (u === 'emirwg' || u === 'bennaref');
+      const isTricky = (u === '26ktricky');
+      const isValid = (isEmirOrBenna && (p === 'knifeduels777' || p === 'osuruk31' || p === 'knifeduelsokay12')) ||
+                      (isTricky && (p === 'yeah123' || p === 'knifeduels777'));
       if (isValid) {
         let avatar = getSafeAvatar(null, u);
         try {
@@ -3011,25 +3039,39 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
     
     async function clearTargetUserInventory() {
-      if (!vermeTargetUser) return;
-      if (!confirm(`Clear all items from @${vermeTargetUser.name}'s inventory?`)) return;
+      if (!vermeTargetUser) return showToast("No user selected!", "error");
+      const targetName = vermeTargetUser.name;
+      const cleanTarget = targetName.toLowerCase().trim();
+      
       vermeTargetUser.inventory = [];
-      const isTargetMe = currentUser && (vermeTargetUser.name.toLowerCase() === currentUser.name.toLowerCase());
+      const isTargetMe = currentUser && (cleanTarget === currentUser.name.toLowerCase().trim());
       if (isTargetMe) {
         fullInventory = [];
         filteredInventory = [];
         renderInventory();
-        localStorage.setItem('kd_inv_' + currentUser.name.toLowerCase().trim(), JSON.stringify([]));
       }
+      localStorage.setItem('kd_inv_' + cleanTarget, JSON.stringify([]));
+
       try {
         await fetch('/api/sync-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: vermeTargetUser.name, inventory: [], profit: vermeTargetUser.profit || 0 })
+          body: JSON.stringify({ username: targetName, inventory: [], profit: vermeTargetUser.profit || 0 })
         });
-        showToast(`Cleared inventory for @${vermeTargetUser.name}!`, "success");
+
+        // Broadcast to target user via WebSocket so their screen clears immediately in real time
+        if (socket && socket.readyState === 1) {
+          socket.send(JSON.stringify({
+            type: 'user_data_updated',
+            targetUser: targetName,
+            userData: { inventory: [] },
+            toast: '⚠️ Your inventory was completely cleared by admin.',
+            toastType: 'info'
+          }));
+        }
+        showToast(`✅ Cleared ALL items for @${targetName}!`, "success");
       } catch(e) {
-        showToast("Error clearing inventory!", "error");
+        showToast("Error clearing inventory on server!", "error");
       }
       renderVermePanels();
     }
