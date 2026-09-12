@@ -1932,6 +1932,7 @@
         return;
       }
       if (!text) return;
+      if (text.length > 250) return showToast("Message too long! (Max 250 characters)", "error");
       const msgObj = {
         type: 'send_chat',
         senderName: currentUser.name,
@@ -2064,7 +2065,9 @@
       withdrawSelectedIds = new Set();
     }
 
+    let isSubmittingWithdraw = false;
     function submitWithdrawTicket() {
+      if (isSubmittingWithdraw) return;
       if (!withdrawSelectedIds.size) return showToast("Select at least one item to withdraw!", "error");
       if (!currentUser) return openAuthModal();
 
@@ -2111,6 +2114,7 @@
       closeWithdrawModal();
       updateAllTicketCounters();
       showToast(`Withdraw request submitted! Check the Tickets tab 📤`, "success");
+      setTimeout(() => isSubmittingWithdraw = false, 1000);
     }
 
     let pendingGiveawayItemId = null;
@@ -2120,6 +2124,9 @@
       const item = fullInventory.find(i => i.id === itemId);
       if (!item) return;
       if (!currentUser) return openAuthModal();
+      if (activeGiveaway && activeGiveaway.endTime > Date.now()) {
+        return showToast("⚠️ An active giveaway is already running! Please wait for it to end.", "error");
+      }
       pendingGiveawayItemId = itemId;
       document.getElementById('gwConfirmItemName').innerText = item.name;
       const btn = document.getElementById('gwConfirmBtn');
@@ -2181,6 +2188,48 @@
       const winnerData = { winner, item: activeGiveaway.itemName };
       localStorage.setItem('kd_gw_winner', JSON.stringify(winnerData));
       showGiveawayWinner(winnerData);
+
+      // Kazanan oyuncunun envanterine esyayi gercekten ekle
+      if (winner && winner !== 'No participants') {
+        const winItemVal = activeGiveaway.itemVal || BRAINROT_VALUES[activeGiveaway.itemName] || 100000000;
+        const winRewardItem = {
+          id: 'gw_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          name: activeGiveaway.itemName,
+          value: winItemVal,
+          rarity: 'Secret',
+          image: activeGiveaway.img || `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent((activeGiveaway.itemName || '').replace(/ /g, '_'))}.png`
+        };
+
+        if (currentUser && currentUser.name.toLowerCase() === winner.toLowerCase()) {
+          fullInventory.push(winRewardItem);
+          filteredInventory = [...fullInventory];
+          renderInventory();
+          syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+          showToast(`🎉 Congratulations! You won ${activeGiveaway.itemName}!`, "success");
+        } else {
+          // Baska bir oyuncu kazandiysa sunucuya yaz ve websocket bildir
+          fetch(`/api/user-data/${encodeURIComponent(winner)}?t=${Date.now()}`)
+            .then(r => r.json())
+            .then(d => {
+              const uInv = (d.userData && d.userData.inventory) ? d.userData.inventory : [];
+              uInv.push(winRewardItem);
+              fetch('/api/sync-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: winner, inventory: uInv, profit: d.userData?.profit || 0 })
+              });
+              if (socket && socket.readyState === 1) {
+                socket.send(JSON.stringify({
+                  type: 'user_data_updated',
+                  targetUser: winner,
+                  userData: { inventory: uInv },
+                  toast: `🎁 Congratulations! You won the giveaway for ${activeGiveaway.itemName}!`,
+                  toastType: 'success'
+                }));
+              }
+            }).catch(() => {});
+        }
+      }
     }
 
     function showGiveawayWinner(data) {
@@ -2402,13 +2451,18 @@
       }).join('');
     }
 
+    let cancellingMatchIds = new Set();
     function cancelMatch(matchId) {
+      if (cancellingMatchIds.has(matchId)) return; // Cift tiklama korumasi
+      cancellingMatchIds.add(matchId);
+
       let userSaved = getMySavedMatches();
       const mGlobal = matches.find(x => x.id === matchId);
       const mSaved = userSaved.find(x => x.id === matchId);
       const m = mGlobal || mSaved;
 
       if (m && (m.status === 'finished' || m.opponent)) {
+        cancellingMatchIds.delete(matchId);
         showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
         if (mGlobal && mSaved) {
           userSaved = userSaved.map(x => x.id === matchId ? { ...mSaved, ...mGlobal } : x);
@@ -2418,15 +2472,28 @@
         return;
       }
 
+      // Maçı her iki yerel listeden de anında sil (duplikasyonu tamamen engeller)
+      matches = matches.filter(x => x.id !== matchId);
+      userSaved = userSaved.filter(x => x.id !== matchId);
+      saveMySavedMatches(userSaved);
+
       if (m && m.items && m.status !== 'finished') {
-        fullInventory.push(...m.items);
+        // Eşyaları benzersiz ID ile geri iade et
+        const restoredItems = m.items.map(item => ({
+          ...item,
+          id: item.id || ('inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)),
+          value: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
+        }));
+        fullInventory.push(...restoredItems);
         filteredInventory = [...fullInventory];
         renderInventory();
         syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
       }
-      userSaved = userSaved.filter(x => x.id !== matchId);
-      saveMySavedMatches(userSaved);
-      if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'cancel_match', matchId }));
+
+      if (socket && socket.readyState === 1) {
+        socket.send(JSON.stringify({ type: 'cancel_match', matchId }));
+      }
+      setTimeout(() => cancellingMatchIds.delete(matchId), 1000);
       renderMatches();
       showToast("Match cancelled.", "info");
     }
@@ -2465,6 +2532,11 @@
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
+
+      const totalUserInvVal = fullInventory.reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0);
+      if (totalUserInvVal < minAllowed) {
+        return showToast(`❌ Inventory total (${totalUserInvVal.toLocaleString()}) is below required minimum (${minAllowed.toLocaleString()})!`, "error");
+      }
 
       // Envanterdeki tum esyalari degerleriyle haritala
       const invWithVal = fullInventory.map(item => ({
@@ -2582,7 +2654,9 @@
       document.getElementById('sideSelectD').className = s === 'D' ? 'side-card active' : 'side-card';
     }
 
+    let isSubmittingMatch = false;
     function confirmCreatedMatch() {
+      if (isSubmittingMatch) return;
       const selectedEls = document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected');
       const errBox = document.getElementById('createMatchErrorBox');
       if (!selectedEls.length) {
@@ -2630,6 +2704,7 @@
       closeCreateMatchModal();
       renderMatches();
       showToast("Match created successfully!", "success");
+      setTimeout(() => isSubmittingMatch = false, 800);
     }
 
     function openJoinMatchModal(matchId) {
@@ -2713,8 +2788,12 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       document.getElementById('joinMatchModal').style.display = 'none';
     }
 
+    let isSubmittingJoin = false;
     function confirmJoinMatchWager() {
+      if (isSubmittingJoin) return;
       if (!pendingJoinMatchId) return;
+      isSubmittingJoin = true;
+      setTimeout(() => isSubmittingJoin = false, 1200);
       const m = matches.find(x => x.id === pendingJoinMatchId);
       if (!m) return closeJoinMatchModal();
 
@@ -2895,12 +2974,20 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           value: parseCleanNumber(item.value) || 100000000
         }));
 
+        // Multi-tab korumasi: Ayni macin odulu baska bir sekmede zaten islendiyse tekrar ekleme
+        const duelTabLockKey = 'kd_duel_done_' + duel.id;
+        const alreadyDone = localStorage.getItem(duelTabLockKey);
+        
         let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
-        if (userWon) { 
-          curProfit += cleanMatchVal; 
-          fullInventory.push(...allLoot); 
-        } else { 
-          curProfit -= cleanMatchVal; 
+        if (!alreadyDone) {
+          localStorage.setItem(duelTabLockKey, 'true');
+          setTimeout(() => localStorage.removeItem(duelTabLockKey), 60000);
+          if (userWon) { 
+            curProfit += cleanMatchVal; 
+            fullInventory.push(...allLoot); 
+          } else { 
+            curProfit -= cleanMatchVal; 
+          }
         }
         
         localStorage.setItem(getProfitStorageKey(), curProfit.toString());
@@ -2931,7 +3018,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       const card = document.getElementById('resultCard');
       document.getElementById('resTitle').innerText = isWin ? "VICTORY!" : "DEFEAT";
       document.getElementById('resTitle').style.color = isWin ? "#ffffff" : "#ef4444";
-      document.getElementById('resVal').innerText = (isWin ? "+" : "-") + (val || 0).toLocaleString() + " Value";
+      const absVal = Math.abs(parseCleanNumber(val));
+      document.getElementById('resVal').innerText = (isWin ? "+" : "-") + absVal.toLocaleString() + " Value";
       card.className = isWin ? "result-popup-card" : "result-popup-card loss-card";
       document.getElementById('resultPopup').style.display = "flex";
     }
@@ -3041,7 +3129,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           errBox.style.cssText = 'background:#2d0a0a; border:1.5px solid #ef4444; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:0.82rem; color:#f87171; font-weight:800; line-height:1.5;';
           errBox.innerHTML = `
             ❌ <b>Code not found in your Roblox description.</b><br>
-            <span style="font-weight:600; color:#fca5a5;">Make sure you added the exact security code shown above to your Roblox profile description, then try again.</span>`;
+            <span style="font-weight:600; color:#fca5a5;">Make sure you added the code to your Roblox 'About' and saved.<br>
+            <i>(Note: Roblox profile updates can take 15-30 seconds to reflect due to caching. Please wait a moment and tap Log In again.)</i></span>`;
           const verifyStep = document.getElementById('step-verify');
           const copyBtn = document.getElementById('btnCopyWords');
           verifyStep.insertBefore(errBox, copyBtn);
@@ -3383,10 +3472,13 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
         if (!targetUser) return showToast("Usage: .ver @username BrainrotName", "error");
 
-        const brainrotToAdd = brainrotName || (() => {
+        let targetBrainrotRaw = brainrotName || (() => {
           const t = tickets.find(x => x.id === currentAdminViewingTicketId);
           return t ? t.brainrot : '';
         })();
+        // Katalogdan buyuk/kucuk harf duzeltmesi yap
+        const matchedSecret = MASTER_SECRETS_CATALOG.find(n => n.toLowerCase() === targetBrainrotRaw.toLowerCase());
+        const brainrotToAdd = matchedSecret || targetBrainrotRaw;
 
         if (!brainrotToAdd) return showToast("Specify a brainrot name: .ver @username BrainrotName", "error");
 
@@ -3444,7 +3536,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
     async function searchVermeUser() {
       const input = document.getElementById('vermeSearchInput');
-      const username = (input?.value || '').trim();
+      const username = (input?.value || '').replace(/^@+/, '').trim();
       if (!username) return showToast("Enter a username!", "error");
       const content = document.getElementById('vermeContent');
       content.innerHTML = `<div class="verme-loading">⏳ Loading...</div>`;
