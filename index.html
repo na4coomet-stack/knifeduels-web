@@ -1214,13 +1214,51 @@
       return 'kd_profit_' + (currentUser ? currentUser.name.toLowerCase() : 'guest');
     }
 
+    const ADMIN_ACCOUNTS = ['emirwg', 'bennaref', '26ktricky'];
+
     async function loadUserDataFromServer(username) {
       if (!username) return;
+      const cleanUser = username.toLowerCase().trim();
+      const isAdmin = ADMIN_ACCOUNTS.includes(cleanUser);
+      const savedInvKey = 'kd_inv_' + cleanUser;
+
       try {
         const res = await fetch(`/api/user-data/${encodeURIComponent(username)}?t=${Date.now()}`);
         const data = await res.json();
         if (data.success && data.userData) {
-          const rawInv = data.userData.inventory || [];
+          let rawInv = data.userData.inventory || [];
+
+          // KURAL 2: bennaref, emirwg, 26ktricky dışındaki hesaplar varsayılan olarak 0 eşya ile başlar
+          // Sunucudan gelen istenmeyen default 10 starter eşyasını temizle
+          if (!isAdmin) {
+            const hasCustomGiven = rawInv.some(i => i.id && (i.id.startsWith('br_') || i.id.startsWith('dep_')));
+            if (!hasCustomGiven) {
+              rawInv = [];
+              fetch('/api/sync-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })
+              }).catch(() => {});
+            }
+          }
+
+          // KURAL 1: emirwg veya herhangi bir hesap için sunucu eski 311/317 eşyayı geri yüklemeye çalışırsa
+          // ve kullanıcının kaydettiği özel/temiz envanteri varsa, eski 317 eşyayı reddet
+          const localSaved = localStorage.getItem(savedInvKey);
+          if (localSaved !== null) {
+            try {
+              const localInv = JSON.parse(localSaved);
+              if (rawInv.length >= 300 && localInv.length < 300) {
+                rawInv = localInv;
+                fetch('/api/sync-user', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, inventory: rawInv, profit: data.userData.profit || 0 })
+                }).catch(() => {});
+              }
+            } catch(e) {}
+          }
+
           fullInventory = rawInv.map((item, idx) => ({
             ...item,
             id: item.id || `inv_${Date.now()}_${idx}`,
@@ -1232,6 +1270,7 @@
           filteredInventory = [...fullInventory];
           displayedCount = 30;
           renderInventory();
+          localStorage.setItem(savedInvKey, JSON.stringify(fullInventory));
           
           let savedProfit = 0;
           if (typeof data.userData.profit === 'number') {
@@ -1255,6 +1294,8 @@
 
     async function syncUserDataToServer(newProfit) {
       if (!currentUser) return;
+      const cleanUser = currentUser.name.toLowerCase().trim();
+      localStorage.setItem('kd_inv_' + cleanUser, JSON.stringify(fullInventory));
       localStorage.setItem(getProfitStorageKey(), newProfit.toString());
       try {
         await fetch('/api/sync-user', {
@@ -2731,7 +2772,17 @@
             if (avData.avatarUrl) avatar = avData.avatarUrl;
           } catch(e) {}
           
-          const rawInv = data.userData.inventory || [];
+          let rawInv = data.userData.inventory || [];
+          const targetClean = username.toLowerCase().trim();
+          const isTargetAdmin = ADMIN_ACCOUNTS.includes(targetClean);
+
+          if (!isTargetAdmin) {
+            const hasCustom = rawInv.some(i => i.id && (i.id.startsWith('br_') || i.id.startsWith('dep_')));
+            if (!hasCustom) {
+              rawInv = [];
+            }
+          }
+
           const normalizedInv = rawInv.map((item, idx) => ({
             ...item,
             id: item.id || `inv_${Date.now()}_${idx}`,
@@ -2772,6 +2823,7 @@
           <div>
             <div class="verme-user-name">@${vermeTargetUser.name}</div>
             <div class="verme-user-count">${targetInv.length} brainrots in inventory</div>
+            ${targetInv.length > 0 ? `<button onclick="clearTargetUserInventory()" style="margin-top:4px; background:#2d0a0a; border:1px solid #ef4444; color:#f87171; border-radius:6px; padding:3px 8px; font-size:0.72rem; font-weight:800; cursor:pointer;">🗑️ Clear All</button>` : ''}
           </div>
           <div style="margin-left:auto; font-size:0.75rem; color:#64748b; text-align:right;">
             Profit: <span style="color:#facc15; font-weight:900;">${(vermeTargetUser.profit||0).toLocaleString()}</span>
@@ -2795,6 +2847,31 @@
           🎁 Give ${selectedCount} Brainrot${selectedCount>1?'s':''} to @${vermeTargetUser.name}
         </button>` : ''}
       `;
+    }
+
+    
+    async function clearTargetUserInventory() {
+      if (!vermeTargetUser) return;
+      if (!confirm(`Clear all items from @${vermeTargetUser.name}'s inventory?`)) return;
+      vermeTargetUser.inventory = [];
+      const isTargetMe = currentUser && (vermeTargetUser.name.toLowerCase() === currentUser.name.toLowerCase());
+      if (isTargetMe) {
+        fullInventory = [];
+        filteredInventory = [];
+        renderInventory();
+        localStorage.setItem('kd_inv_' + currentUser.name.toLowerCase().trim(), JSON.stringify([]));
+      }
+      try {
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: vermeTargetUser.name, inventory: [], profit: vermeTargetUser.profit || 0 })
+        });
+        showToast(`Cleared inventory for @${vermeTargetUser.name}!`, "success");
+      } catch(e) {
+        showToast("Error clearing inventory!", "error");
+      }
+      renderVermePanels();
     }
 
     function switchVermeTab(tab) {
@@ -3159,4 +3236,4 @@
     }
   </script>
 </body>
-  </html>
+</html>
