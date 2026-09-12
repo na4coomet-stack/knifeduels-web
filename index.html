@@ -611,7 +611,7 @@
     }
     .btn-card-join-bloxluck {
       width: 100% !important;
-      background: #00df81 !important;
+      background: #ffffff !important;
       color: #000000 !important;
       font-weight: 900 !important;
       font-size: 0.95rem !important;
@@ -620,14 +620,14 @@
       padding: 12px 16px !important;
       cursor: pointer !important;
       text-align: center !important;
-      box-shadow: 0 4px 15px rgba(0, 223, 129, 0.25) !important;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.18) !important; border: 1.5px solid #ffffff !important;
       transition: all 0.15s ease !important;
       letter-spacing: 0.2px !important;
     }
     .btn-card-join-bloxluck:hover {
-      background: #05f08c !important;
+      background: #f1f5f9 !important;
       transform: translateY(-1px) !important;
-      box-shadow: 0 6px 20px rgba(0, 223, 129, 0.35) !important;
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.28) !important;
     }
     .btn-card-cancel-bloxluck {
       width: 100% !important;
@@ -1210,7 +1210,10 @@
         <h2>Create Match</h2>
         <button class="btn-close" onclick="closeCreateMatchModal()">✕</button>
       </div>
-      <div style="font-size:1rem; font-weight:800; color:#fff; margin-bottom:10px;" id="selectedValDisplay">Value: 0</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:1rem; font-weight:800; color:#fff;" id="selectedValDisplay">Value: 0</div>
+        <button type="button" id="btnSelectAllCreateMatch" onclick="toggleSelectAllCreateMatch()" style="background:#1e293b; border:1.5px solid #38bdf8; color:#38bdf8; font-size:0.8rem; font-weight:900; border-radius:8px; padding:6px 14px; cursor:pointer; transition:all 0.15s ease;">Select All 📦</button>
+      </div>
       <div id="createMatchErrorBox" style="display:none; background:#2d0a0a; border:1px solid #ef4444; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#f87171; font-weight:800; margin-bottom:10px;"></div>
       <div class="modal-items-grid" id="modalItemsPicker"></div>
       
@@ -1242,7 +1245,14 @@
       <div id="joinMatchErrorBox" style="display:none; background:#2d0a0a; border:1px solid #ef4444; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#f87171; font-weight:800; margin-bottom:10px;"></div>
       <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Select items from your inventory (-20k up to +150k tolerance):</p>
       <div class="modal-items-grid" id="joinItemsPicker"></div>
-      <button class="blox-btn-primary" id="btnConfirmJoinDuel" style="width:100%; padding:14px;" onclick="confirmJoinMatchWager()">CONFIRM & DUEL</button>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button type="button" id="btnFastSelectJoin" onclick="autoFastSelectJoin()" style="flex:1; background:#1e293b; border:1.5px solid #38bdf8; color:#38bdf8; font-weight:900; font-size:0.88rem; border-radius:12px; padding:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.15s ease;">
+          ⚡ Fast Select
+        </button>
+        <button class="blox-btn-primary" id="btnConfirmJoinDuel" style="flex:1.4; padding:13px; margin:0;" onclick="confirmJoinMatchWager()">
+          CONFIRM & DUEL
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2258,16 +2268,22 @@
 
     function renderMatches() {
       const container = document.getElementById('matchesContainer');
-      const myName = (currentUser?.name || "").toLowerCase();
+      const myName = (currentUser && currentUser.name) ? String(currentUser.name).toLowerCase().trim() : "";
       const userSaved = getMySavedMatches();
 
       let list;
       if (myMatchesOnly) {
-        // My Matches sekmesi: Kullanıcının kendi kurduğu maçlar veya oynadığı düellolar
+        // My Matches: Yalnizca kullanicinin kendi kurdugu veya oynadigi maclar
         list = userSaved;
       } else {
-        // All Matches sekmesi: Kullanıcının kendi kurduğu maçlar GÖZÜKMEZ! Sadece başkalarının açık maçları görünür:
-        list = matches.filter(m => (m.status === 'open') && (m.creatorName || "").toLowerCase() !== myName);
+        // All Matches: KENDI KURDUGUM MAC KESINLIKLE GOZUKMEZ!
+        // Sadece durumu 'open' olan ve kurucusu baska kullanicilar olan maclar listelenir
+        list = matches.filter(m => {
+          if (m.status !== 'open') return false;
+          const creator = String(m.creatorName || "").toLowerCase().trim();
+          if (myName && creator === myName) return false;
+          return true;
+        });
       }
 
       if (!list.length) {
@@ -2415,6 +2431,117 @@
       showToast("Match cancelled.", "info");
     }
 
+    
+    function toggleSelectAllCreateMatch() {
+      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card');
+      if (!cards.length) return;
+      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
+      const btn = document.getElementById('btnSelectAllCreateMatch');
+
+      if (allSelected) {
+        cards.forEach(c => c.classList.remove('is-selected'));
+        if (btn) btn.innerText = 'Select All 📦';
+      } else {
+        cards.forEach(c => c.classList.add('is-selected'));
+        if (btn) btn.innerText = 'Deselect All ✕';
+      }
+      calculateSelectedVal();
+    }
+
+    function updateSelectAllButtonUI() {
+      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card');
+      const btn = document.getElementById('btnSelectAllCreateMatch');
+      if (!cards.length || !btn) return;
+      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
+      btn.innerText = allSelected ? 'Deselect All ✕' : 'Select All 📦';
+    }
+
+    function autoFastSelectJoin() {
+      if (!pendingJoinMatchId) return;
+      const m = matches.find(x => x.id === pendingJoinMatchId);
+      if (!m) return showToast("Match not found!", "error");
+      if (!fullInventory.length) return showToast("Inventory empty!", "error");
+
+      const matchTarget = parseCleanNumber(m.value) || 100000000;
+      const minAllowed = Math.floor(matchTarget * 0.95);
+      const maxAllowed = Math.ceil(matchTarget * 1.05);
+
+      // Envanterdeki tum esyalari degerleriyle haritala
+      const invWithVal = fullInventory.map(item => ({
+        item,
+        val: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
+      }));
+
+      // 1. Tek basina tam araliga uyan bir esya var mi?
+      for (const entry of invWithVal) {
+        if (entry.val >= minAllowed && entry.val <= maxAllowed) {
+          applyFastSelection([entry.item]);
+          return;
+        }
+      }
+
+      // 2. Buyukten kucuge greedy kombinasyon arama
+      const candidates = invWithVal.filter(e => e.val <= maxAllowed).sort((a, b) => b.val - a.val);
+      let selected = [];
+      let sum = 0;
+      for (const c of candidates) {
+        if (sum + c.val <= maxAllowed) {
+          selected.push(c.item);
+          sum += c.val;
+          if (sum >= minAllowed && sum <= maxAllowed) {
+            applyFastSelection(selected);
+            return;
+          }
+        }
+      }
+
+      // 3. 2'li esya ciftleri kontrolu
+      for (let i = 0; i < candidates.length; i++) {
+        for (let j = i + 1; j < candidates.length; j++) {
+          const pairSum = candidates[i].val + candidates[j].val;
+          if (pairSum >= minAllowed && pairSum <= maxAllowed) {
+            applyFastSelection([candidates[i].item, candidates[j].item]);
+            return;
+          }
+        }
+      }
+
+      // 4. Kucukten buyuge greedy kontrolu (ufak degerli itemlerin toplami)
+      const candAsc = [...candidates].sort((a, b) => a.val - b.val);
+      selected = [];
+      sum = 0;
+      for (const c of candAsc) {
+        if (sum + c.val <= maxAllowed) {
+          selected.push(c.item);
+          sum += c.val;
+          if (sum >= minAllowed && sum <= maxAllowed) {
+            applyFastSelection(selected);
+            return;
+          }
+        }
+      }
+
+      showToast("❌ No compatible item combination found for this match range!", "error");
+    }
+
+    function applyFastSelection(items) {
+      joinSelectedIds.clear();
+      items.forEach(i => joinSelectedIds.add(i.id));
+
+      const cards = document.querySelectorAll('#joinItemsPicker .modal-item-row-card');
+      cards.forEach(card => {
+        const id = card.getAttribute('data-id');
+        if (joinSelectedIds.has(id)) {
+          card.classList.add('is-selected');
+        } else {
+          card.classList.remove('is-selected');
+        }
+      });
+
+      calculateJoinSelectedVal();
+      showToast(`⚡ Fast Select: Selected ${items.length} item(s)!`, "success");
+    }
+
     function openCreateMatchModal() {
       if (!currentUser) return openAuthModal();
       if (!fullInventory || !fullInventory.length) return showToast("Your inventory is empty!", "error");
@@ -2423,7 +2550,7 @@
       picker.innerHTML = fullInventory.map(item => {
         const itemVal = typeof item.value === 'number' && item.value > 0 ? item.value : 100000000;
         return `
-        <div class="modal-item-row-card" data-id="${item.id}" data-val="${itemVal}" onclick="this.classList.toggle('is-selected'); calculateSelectedVal();">
+        <div class="modal-item-row-card" data-id="${item.id}" data-val="${itemVal}" onclick="this.classList.toggle('is-selected'); calculateSelectedVal(); updateSelectAllButtonUI();">
           <div class="modal-item-row-left">
             <div class="modal-item-row-icon">
               <img src="${getItemImgUrl(item)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${item.name}')">
@@ -2904,6 +3031,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           localStorage.setItem('kd_user', JSON.stringify(currentUser));
           await loadUserDataFromServer(pendingAuthUser.username);
           closeAuthModal();
+          renderMatches();
           renderLoggedInState();
           updateAllTicketCounters();
           showToast(`✅ Successfully logged in! Welcome @${currentUser.name}`, "success");
@@ -2944,6 +3072,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         localStorage.setItem('kd_user', JSON.stringify(currentUser));
         await loadUserDataFromServer(u);
         closeAuthModal();
+        renderMatches();
         renderLoggedInState();
         updateAllTicketCounters();
         renderTicketTransactions();
