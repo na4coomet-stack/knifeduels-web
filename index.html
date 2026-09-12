@@ -346,6 +346,125 @@
 
     
     
+    
+    /* ===== BLOXLUCK MATCH HISTORY STYLE (IMAGE 11) ===== */
+    .bloxluck-history-card {
+      background: #0d121c;
+      border: 1.5px solid #1a2332;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .history-players-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .history-player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+    .history-player-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .history-chip {
+      width: 22px !important;
+      height: 22px !important;
+      min-width: 22px !important;
+      min-height: 22px !important;
+      max-width: 22px !important;
+      max-height: 22px !important;
+      font-size: 0.65rem !important;
+      flex-shrink: 0 !important;
+      aspect-ratio: 1 / 1 !important;
+    }
+    .history-avatar {
+      width: 26px !important;
+      height: 26px !important;
+      min-width: 26px !important;
+      min-height: 26px !important;
+      max-width: 26px !important;
+      max-height: 26px !important;
+      flex-shrink: 0 !important;
+      aspect-ratio: 1 / 1 !important;
+    }
+    .history-player-name {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .history-items-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-left: 2px;
+    }
+    .history-item-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    .history-item-icon:hover {
+      transform: scale(1.25);
+    }
+    .history-item-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .history-val-text {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #94a3b8;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: auto;
+      padding-left: 6px;
+    }
+    .history-winner-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-left: 6px;
+      flex-shrink: 0;
+    }
+    .history-winner-col .chip {
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px !important;
+      min-height: 44px !important;
+      max-width: 44px !important;
+      max-height: 44px !important;
+      font-size: 1.25rem !important;
+      border-width: 3px !important;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.3) !important;
+      flex-shrink: 0 !important;
+      aspect-ratio: 1 / 1 !important;
+    }
+
     /* Finished Match Card Layout */
     .finished-duel-box {
       display: flex;
@@ -1199,6 +1318,17 @@
     let vermeCatalogSearchFilter = "";
 
     
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     function parseCleanNumber(val) {
       if (typeof val === 'number') return isNaN(val) ? 0 : Math.round(val);
       if (!val) return 0;
@@ -1612,17 +1742,19 @@
     function appendChatMessage(msg) {
       const box = document.getElementById('chatMessagesBox');
       if (!box || !msg || !msg.text) return;
-      const sender = msg.senderName || msg.sender || 'User';
-      const av = getSafeAvatar(msg.senderAvatar, sender);
+      const rawSender = msg.senderName || msg.sender || 'User';
+      const safeSender = escapeHtml(rawSender);
+      const safeText = escapeHtml(msg.text);
+      const av = getSafeAvatar(msg.senderAvatar, rawSender);
       const item = document.createElement('div');
       item.className = 'chat-item';
       item.innerHTML = `
         <div class="chat-avatar">
-          <img src="${av}" referrerpolicy="no-referrer" alt="${sender}" onerror="handleAvatarError(this, '${sender}')">
+          <img src="${av}" referrerpolicy="no-referrer" alt="${safeSender}" onerror="handleAvatarError(this, '${safeSender}')">
         </div>
         <div class="chat-bubble">
-          <span style="font-size:0.72rem; font-weight:800; color:#94a3b8;">@${sender}</span>
-          <span class="chat-text">${msg.text}</span>
+          <span style="font-size:0.72rem; font-weight:800; color:#94a3b8;">@${safeSender}</span>
+          <span class="chat-text">${safeText}</span>
         </div>
       `;
       box.appendChild(item);
@@ -1764,7 +1896,12 @@
       event.preventDefault();
       const input = document.getElementById('chatInputText');
       const text = (input?.value || '').trim();
-      if (!text || !currentUser) return;
+      if (!currentUser) {
+        openAuthModal();
+        showToast("Please log in to send messages!", "info");
+        return;
+      }
+      if (!text) return;
       const msgObj = {
         type: 'send_chat',
         senderName: currentUser.name,
@@ -1929,8 +2066,12 @@
         ]
       };
 
-      const removedIds = new Set(selectedItems.map(i => i.id));
-      fullInventory = fullInventory.filter(i => !removedIds.has(i.id));
+      const usedWithdrawIndices = new Set();
+      for (const item of selectedItems) {
+        const idx = fullInventory.findIndex((invItem, j) => !usedWithdrawIndices.has(j) && (invItem.id === item.id || invItem === item));
+        if (idx !== -1) usedWithdrawIndices.add(idx);
+      }
+      fullInventory = fullInventory.filter((_, i) => !usedWithdrawIndices.has(i));
       filteredInventory = [...fullInventory];
       renderInventory();
       syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
@@ -1982,8 +2123,9 @@
       document.getElementById('gwConfirmModal').style.display = 'none';
       if (gwConfirmTimer) clearInterval(gwConfirmTimer);
       pendingGiveawayItemId = null;
-      fullInventory = fullInventory.filter(i => i.id !== item.id);
-      filteredInventory = filteredInventory.filter(i => i.id !== item.id);
+      const itemIdx = fullInventory.findIndex(i => i.id === item.id || i === item);
+      if (itemIdx !== -1) fullInventory.splice(itemIdx, 1);
+      filteredInventory = [...fullInventory];
       renderInventory();
       syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
       const startTime = Date.now();
@@ -2045,9 +2187,14 @@
           btn.innerText = "Ended"; btn.className = "btn-gw-join joined";
           if (!localStorage.getItem('kd_gw_winner')) pickAndShowGiveawayWinner();
         } else {
-          const mins = Math.floor(remaining / 60000);
+          const hours = Math.floor(remaining / 3600000);
+          const mins = Math.floor((remaining % 3600000) / 60000);
           const secs = Math.floor((remaining % 60000) / 1000);
-          document.getElementById('gwTimerText').innerText = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+          if (hours > 0) {
+            document.getElementById('gwTimerText').innerText = `${hours}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+          } else {
+            document.getElementById('gwTimerText').innerText = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+          }
         }
       }, 1000);
     }
@@ -2132,41 +2279,53 @@
           const winnerSide = String(m.winnerSide || 'K').toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
           const winnerChipHtml = winnerSide === 'K'
-            ? `<div class="chip chip-black" style="width:34px;height:34px;min-width:34px;min-height:34px;font-size:0.95rem;border-width:2px;">K</div>`
-            : `<div class="chip chip-white" style="width:34px;height:34px;min-width:34px;min-height:34px;font-size:0.95rem;border-width:2px;">D</div>`;
+            ? `<div class="chip chip-black" title="Winner: K">K</div>`
+            : `<div class="chip chip-white" title="Winner: D">D</div>`;
+
+          const p1Val = (m.items || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
+          const p2Val = (m.opponentItems || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
 
           return `
-          <div class="blox-duel-card is-finished">
-            <div class="finished-header-bar">
-              <span class="finished-badge">DUEL FINISHED</span>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.75rem; font-weight:800; color:#94a3b8;">Winner:</span>
-                ${winnerChipHtml}
-                <span style="font-size:0.8rem; font-weight:900; color:#facc15; margin-left:6px;">${matchVal.toLocaleString()} Val</span>
+          <div class="bloxluck-history-card is-finished">
+            <div class="history-players-col">
+              <!-- Player 1 Satırı (Görseldeki ColorexGamingYt gibi) -->
+              <div class="history-player-row">
+                <div class="history-player-left">
+                  <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p1Side}</span>
+                  <div class="card-avatar history-avatar"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
+                  <span class="history-player-name">${m.creatorName}</span>
+                  <div class="history-items-strip">
+                    ${(m.items || []).map(i => `
+                      <div class="history-item-icon" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
+                        <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+                <div class="history-val-text">Value: ${p1Val.toLocaleString()}</div>
+              </div>
+
+              <!-- Player 2 Satırı (Görseldeki ADOPTME_DEPOMM gibi) -->
+              <div class="history-player-row">
+                <div class="history-player-left">
+                  <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p2Side}</span>
+                  <div class="card-avatar history-avatar"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
+                  <span class="history-player-name">${m.opponent?.name || 'Opponent'}</span>
+                  <div class="history-items-strip">
+                    ${(m.opponentItems || []).map(i => `
+                      <div class="history-item-icon" title="${i.name} (${(Number(i.value) || BRAINROT_VALUES[i.name] || 100000000).toLocaleString()})">
+                        <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+                <div class="history-val-text">Value: ${p2Val.toLocaleString()}</div>
               </div>
             </div>
-            <div class="finished-duel-box">
-              <div class="finished-player-block">
-                <div class="finished-player-header">
-                  <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}">${p1Side}</span>
-                  <div class="card-avatar"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
-                  <span class="card-player-name">${m.creatorName}</span>
-                </div>
-                <div class="card-items-row" style="padding-left:36px;">
-                  ${(m.items || []).map(i => `<div class="card-item-thumb" style="width:30px;height:30px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
-                </div>
-              </div>
-              <div style="border-top:1px dashed #1e2634; margin:2px 0;"></div>
-              <div class="finished-player-block">
-                <div class="finished-player-header">
-                  <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}">${p2Side}</span>
-                  <div class="card-avatar"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
-                  <span class="card-player-name">${m.opponent?.name || 'Opponent'}</span>
-                </div>
-                <div class="card-items-row" style="padding-left:36px;">
-                  ${(m.opponentItems || []).map(i => `<div class="card-item-thumb" style="width:30px;height:30px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
-                </div>
-              </div>
+
+            <!-- En Sağdaki Büyük Kazanan Coin Çipi (Görseldeki gibi) -->
+            <div class="history-winner-col">
+              ${winnerChipHtml}
             </div>
           </div>`;
         }
@@ -2267,7 +2426,7 @@
     function calculateSelectedVal() {
       let total = 0;
       document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected').forEach(el => {
-        total += parseInt(el.getAttribute('data-val') || '0', 10) || 0;
+        total += parseCleanNumber(el.getAttribute('data-val'));
       });
       document.getElementById('selectedValDisplay').innerText = `Value: ${total.toLocaleString()}`;
     }
@@ -2914,8 +3073,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       if (!myTicket) return;
       const box = document.getElementById('uTicketMessagesBox');
       box.innerHTML = (myTicket.messages || []).map(m => `
-        <div class="ticket-bubble ${m.isSystem ? 'system' : (m.sender.toLowerCase() === 'emirwg' || m.sender.toLowerCase() === 'bennaref' ? 'admin' : 'user')}">
-          <b>${m.sender}:</b> <span style="white-space:pre-wrap;">${m.text}</span>
+        <div class="ticket-bubble ${m.isSystem ? 'system' : (ADMIN_ACCOUNTS.includes((m.sender||'').toLowerCase()) ? 'admin' : 'user')}">
+          <b>${escapeHtml(m.sender)}:</b> <span style="white-space:pre-wrap;">${escapeHtml(m.text)}</span>
         </div>`).join('');
       box.scrollTop = box.scrollHeight;
     }
@@ -3059,8 +3218,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
       const box = document.getElementById('admTicketMessagesBox');
       box.innerHTML = (t.messages || []).map(m => `
-        <div class="ticket-bubble ${m.isSystem ? 'system' : (m.sender.toLowerCase() === 'emirwg' || m.sender.toLowerCase() === 'bennaref' ? 'admin' : 'user')}">
-          <b>${m.sender}:</b> <span style="white-space:pre-wrap;">${m.text}</span>
+        <div class="ticket-bubble ${m.isSystem ? 'system' : (ADMIN_ACCOUNTS.includes((m.sender||'').toLowerCase()) ? 'admin' : 'user')}">
+          <b>${escapeHtml(m.sender)}:</b> <span style="white-space:pre-wrap;">${escapeHtml(m.text)}</span>
         </div>`).join('');
       box.scrollTop = box.scrollHeight;
     }
@@ -3541,17 +3700,20 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
       const allMatches = [...matches, ...getMySavedMatches()];
       allMatches.filter(m => m.status === 'finished').forEach(m => {
+        const cleanVal = parseCleanNumber(m.value) || 100000000;
         const addUser = (name, avatar, won, val) => {
           if (!name || name.includes('Bot')) return;
           const key = name.toLowerCase();
           if (!profileMap[key]) profileMap[key] = { name, avatar: avatar || '', wins: 0, losses: 0, profit: 0, totalVal: 0 };
-          if (won) { profileMap[key].wins++; profileMap[key].profit += val || 0; }
-          else { profileMap[key].losses++; profileMap[key].profit -= val || 0; }
-          profileMap[key].totalVal += val || 0;
+          if (won) { profileMap[key].wins++; profileMap[key].profit += val; }
+          else { profileMap[key].losses++; profileMap[key].profit -= val; }
+          profileMap[key].totalVal += val;
         };
-        const creatorWon = m.winnerSide === m.side;
-        addUser(m.creatorName, m.creatorAvatar, creatorWon, m.value);
-        addUser(m.opponent?.name, m.opponent?.avatar, !creatorWon, m.value);
+        const p1Side = String(m.side || 'K').toUpperCase().trim();
+        const wSide = String(m.winnerSide || 'K').toUpperCase().trim();
+        const creatorWon = (wSide === p1Side);
+        addUser(m.creatorName, m.creatorAvatar, creatorWon, cleanVal);
+        addUser(m.opponent?.name, m.opponent?.avatar, !creatorWon, cleanVal);
       });
 
       let rows = Object.values(profileMap);
