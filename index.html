@@ -669,6 +669,7 @@
         <button class="btn-close" onclick="closeCreateMatchModal()">✕</button>
       </div>
       <div style="font-size:1rem; font-weight:800; color:#fff; margin-bottom:10px;" id="selectedValDisplay">Value: 0</div>
+      <div id="createMatchErrorBox" style="display:none; background:#2d0a0a; border:1px solid #ef4444; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#f87171; font-weight:800; margin-bottom:10px;"></div>
       <div class="modal-items-grid" id="modalItemsPicker"></div>
       
       <div class="side-picker">
@@ -697,6 +698,7 @@
         <div style="font-size:1.15rem; font-weight:900; color:#facc15;" id="joinTargetValDisplay">0 Value</div>
         <div style="font-size:0.75rem; color:#38bdf8; font-weight:800; margin-top:4px;" id="joinSelectedValDisplay">Your Selected: 0 Value</div>
       </div>
+      <div id="joinMatchErrorBox" style="display:none; background:#2d0a0a; border:1px solid #ef4444; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#f87171; font-weight:800; margin-bottom:10px;"></div>
       <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Select items from your inventory to match or exceed the wager value:</p>
       <div class="modal-items-grid" id="joinItemsPicker"></div>
       <button class="blox-btn-primary" id="btnConfirmJoinDuel" style="width:100%; padding:14px;" onclick="confirmJoinMatchWager()">CONFIRM & DUEL</button>
@@ -784,7 +786,6 @@
   </div>
 
   <script>
-    // ===== RENDER BACKEND BRIDGE =====
     const BACKEND_URL = 'https://knifeduels-backend-2.onrender.com';
     const _origFetch = window.fetch;
     window.fetch = function(url, options) {
@@ -821,7 +822,6 @@
     let displayedCount = 30;
     let tickets = [];
     
-    // K/D Skorlarının Kalıcı Yüklenmesi
     let blackWins = parseInt(localStorage.getItem('kd_k_wins') || '0', 10);
     let whiteWins = parseInt(localStorage.getItem('kd_d_wins') || '0', 10);
 
@@ -830,7 +830,6 @@
     let handledDuelIds = new Set();
     let currentAdminViewingTicketId = null;
 
-    // Join Match Seçim State'i
     let pendingJoinMatchId = null;
     let joinSelectedIds = new Set();
 
@@ -1062,7 +1061,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      // Skorları Ekrana Yaz
       document.getElementById('blackCount').innerText = blackWins;
       document.getElementById('whiteCount').innerText = whiteWins;
 
@@ -1598,7 +1596,7 @@
             ${isMy ? `
               <button class="btn-card-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <button class="btn-card-join" onclick="openJoinMatchModal('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
+              <button class="btn-card-join" onclick="handleJoinMatchClick('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
             `}
           </div>
         </div>`;
@@ -1620,18 +1618,63 @@
       showToast("Match cancelled.", "info");
     }
 
-    // ===== JOIN MATCH VALUE MATCH MODAL SİSTEMİ =====
-    function openJoinMatchModal(matchId) {
+    // ===== FAST SELECT & VALUE MATCH SİSTEMİ =====
+    function handleJoinMatchClick(matchId) {
       if (!currentUser) return openAuthModal();
       const m = matches.find(x => x.id === matchId);
       if (!m) return showToast("Match not found!", "error");
       if (!fullInventory.length) return showToast("Your inventory is empty!", "error");
+
+      const targetVal = m.value;
+
+      // 1. Fast Select: Envanterden tam değeri tutturacak veya en yakın eşyayı otomatik bul
+      let chosenItems = [];
+      let currentSum = 0;
+
+      // Önce tam değeri eşitleyen tek bir eşya ara
+      let exactMatch = fullInventory.find(i => (i.value || 0) === targetVal);
+      if (exactMatch) {
+        chosenItems = [exactMatch];
+      } else {
+        // Otomatik küçükten büyüğe / büyükten küçüğe kombinasyon dene
+        let sorted = [...fullInventory].sort((a,b) => (b.value || 0) - (a.value || 0));
+        for (let item of sorted) {
+          if (currentSum < targetVal) {
+            chosenItems.push(item);
+            currentSum += (item.value || 0);
+          }
+        }
+      }
+
+      const totalChosenVal = chosenItems.reduce((s, i) => s + (i.value || 0), 0);
+
+      // Eğer otomatik seçim maç değerini karşılıyorsa MODAL AÇMADAN DİREK KATIL! (Fast Select)
+      if (totalChosenVal >= targetVal && chosenItems.length > 0) {
+        executeJoinMatch(m.id, chosenItems);
+      } else {
+        // Eğer değer yetmiyorsa modalı aç ve hatayı O SEKMEDE (modal içinde) göster
+        openJoinMatchModal(matchId, `⚠️ Insufficient value! Match requires ${targetVal.toLocaleString()}, but your inventory total is ${totalChosenVal.toLocaleString()}.`);
+      }
+    }
+
+    function openJoinMatchModal(matchId, errorMessage = '') {
+      const m = matches.find(x => x.id === matchId);
+      if (!m) return;
 
       pendingJoinMatchId = matchId;
       joinSelectedIds = new Set();
 
       document.getElementById('joinTargetValDisplay').innerText = `${m.value.toLocaleString()} Value`;
       document.getElementById('joinSelectedValDisplay').innerText = `Your Selected: 0 Value`;
+
+      const errBox = document.getElementById('joinMatchErrorBox');
+      if (errorMessage) {
+        errBox.style.display = 'block';
+        errBox.innerText = errorMessage;
+      } else {
+        errBox.style.display = 'none';
+        errBox.innerText = '';
+      }
 
       const picker = document.getElementById('joinItemsPicker');
       picker.innerHTML = fullInventory.slice(0, 40).map(item => `
@@ -1685,13 +1728,27 @@
 
       const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
       const totalVal = chosenItems.reduce((s, i) => s + (i.value || 0), 0);
+      const errBox = document.getElementById('joinMatchErrorBox');
 
-      if (!chosenItems.length) return showToast("Select item(s) from your inventory to join!", "error");
+      if (!chosenItems.length) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Select at least one item from your inventory!';
+        return;
+      }
       if (totalVal < m.value) {
-        return showToast(`Insufficient value! Select at least ${m.value.toLocaleString()} value.`, "error");
+        errBox.style.display = 'block';
+        errBox.innerText = `❌ Insufficient value! Selected: ${totalVal.toLocaleString()} / Required: ${m.value.toLocaleString()}`;
+        return;
       }
 
-      // Envanterden eşyaları çıkar
+      executeJoinMatch(m.id, chosenItems);
+      closeJoinMatchModal();
+    }
+
+    function executeJoinMatch(matchId, chosenItems) {
+      const m = matches.find(x => x.id === matchId);
+      if (!m) return;
+
       const chosenIds = new Set(chosenItems.map(i => i.id));
       fullInventory = fullInventory.filter(i => !chosenIds.has(i.id));
       filteredInventory = [...fullInventory];
@@ -1706,7 +1763,6 @@
         }));
       }
 
-      closeJoinMatchModal();
       showToast("Joined match! Rolling duel...", "success");
     }
 
@@ -1758,7 +1814,6 @@
           document.getElementById('boxPlayer1').classList.add('loser');
         }
         
-        // K/D Skorlarını Arttır ve Kalıcı Kaydet
         if (duel.winnerSide === 'K') {
           blackWins++;
           localStorage.setItem('kd_k_wins', blackWins.toString());
@@ -1773,7 +1828,6 @@
         const matchVal = parseInt(duel.value, 10) || 0;
         const allLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
 
-        // Profit Hesapla ve Kalıcı Kaydet
         let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
         if (userWon) { 
           curProfit += matchVal; 
@@ -1820,6 +1874,7 @@
     function openCreateMatchModal() {
       if (!currentUser) return openAuthModal();
       if (!fullInventory.length) return showToast("Your inventory is empty!", "error");
+      document.getElementById('createMatchErrorBox').style.display = 'none';
       const picker = document.getElementById('modalItemsPicker');
       picker.innerHTML = fullInventory.slice(0, 35).map(item => `
         <div class="modal-item-row-card" data-id="${item.id}" data-val="${item.value}" onclick="this.classList.toggle('is-selected'); calculateSelectedVal();">
@@ -1851,7 +1906,12 @@
 
     function confirmCreatedMatch() {
       const selectedEls = document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected');
-      if (!selectedEls.length) return showToast("Select at least one Brainrot item!", "error");
+      const errBox = document.getElementById('createMatchErrorBox');
+      if (!selectedEls.length) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Select at least one Brainrot item!';
+        return;
+      }
       const chosenIds = Array.from(selectedEls).map(el => el.getAttribute('data-id'));
       const chosenItems = fullInventory.filter(i => chosenIds.includes(i.id));
       const totalVal = chosenItems.reduce((a, b) => a + (b.value || 0), 0);
