@@ -1169,6 +1169,14 @@
           } else if (data.type === 'duel_started') {
             const mIdx = matches.findIndex(m => m.id === data.match.id);
             if (mIdx !== -1) matches[mIdx] = data.match;
+            // FIX: userSaved'daki eski open kopyasını da güncelle
+            // (yan hesaptan join sonra creator hesabına geçince Cancel çıkmasını önler)
+            let _saved = getMySavedMatches();
+            const _sIdx = _saved.findIndex(m => m.id === data.match.id);
+            if (_sIdx !== -1) {
+              _saved[_sIdx] = { ..._saved[_sIdx], ...data.match };
+              saveMySavedMatches(_saved);
+            }
             renderMatches();
             if (!handledDuelIds.has(data.match.id)) {
               handledDuelIds.add(data.match.id);
@@ -1582,7 +1590,23 @@
 
     function cancelMatch(matchId) {
       let userSaved = getMySavedMatches();
-      const m = userSaved.find(x => x.id === matchId) || matches.find(x => x.id === matchId);
+      // FIX: global matches'tan da kontrol et — yan hesap join ettiyse burada opponent var
+      const mGlobal = matches.find(x => x.id === matchId);
+      const mSaved = userSaved.find(x => x.id === matchId);
+      const m = mGlobal || mSaved;
+
+      // Maça biri join ettiyse veya bitmişse cancel'ı engelle
+      if (m && (m.status === 'finished' || m.opponent)) {
+        showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
+        // userSaved'daki stale 'open' kopyasını global state ile sync et
+        if (mGlobal && mSaved) {
+          userSaved = userSaved.map(x => x.id === matchId ? { ...mSaved, ...mGlobal } : x);
+          saveMySavedMatches(userSaved);
+          renderMatches();
+        }
+        return;
+      }
+
       if (m && m.items && m.status !== 'finished') {
         fullInventory.push(...m.items);
         filteredInventory = [...fullInventory];
