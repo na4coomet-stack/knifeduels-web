@@ -53,7 +53,7 @@
     .side-icon-box { width: 44px; height: 44px; border-radius: 12px; background-color: #12161f; border: 1px solid #232a38; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
     .ticket-badge-pill { position: absolute; top: -4px; right: -8px; background-color: #facc15; color: #000000; font-size: 0.58rem; font-weight: 900; border-radius: 6px; padding: 2px 5px; box-shadow: 0 0 10px rgba(250,204,21,0.6); }
 
-    /* SIDE ICON NOTIFICATION BADGE (for tickets tab) */
+    /* SIDE ICON NOTIFICATION BADGE */
     .side-icon-notif { position: absolute; top: -4px; right: -6px; background-color: #ef4444; color: #fff; font-size: 0.58rem; font-weight: 900; border-radius: 10px; min-width: 16px; height: 16px; display: none; align-items: center; justify-content: center; border: 1.5px solid #07090d; padding: 0 3px; pointer-events: none; }
     .side-icon-notif.show { display: flex; }
 
@@ -72,7 +72,7 @@
     .chat-input { flex: 1; background-color: #06080c; border: 1px solid #202736; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.85rem; outline: none; }
     .btn-send-chat { background-color: #ffffff; border: none; border-radius: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #000000; cursor: pointer; flex-shrink: 0; }
 
-    /* TICKET TRANSACTIONS PANEL (inside side nav) */
+    /* TICKET TRANSACTIONS PANEL */
     .ticket-transactions-panel { flex: 1; display: none; flex-direction: column; background-color: #0e121a; overflow: hidden; }
     .ticket-transactions-panel.active { display: flex; }
     .tt-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1c2331; flex-shrink: 0; }
@@ -296,32 +296,6 @@
     .verme-tab.active { background:#1e0a3c; border-color:#7c3aed; color:#a855f7; }
     .verme-loading { text-align:center; padding:30px 0; color:#64748b; font-size:0.85rem; }
 
-    /* LEADERBOARD */
-    .lb-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); backdrop-filter: blur(10px); justify-content: center; align-items: flex-end; z-index: 999999; padding: 0; }
-    .lb-sheet { background: #0a0d14; border: 1.5px solid #1c2331; border-radius: 22px 22px 0 0; width: 100%; max-width: 480px; margin: 0 auto; padding: 0 0 40px 0; max-height: 88vh; overflow-y: auto; position: relative; box-shadow: 0 -10px 40px rgba(0,0,0,0.95); }
-    .lb-handle { width: 40px; height: 4px; background: #2a3447; border-radius: 2px; margin: 14px auto 0; }
-    .lb-header { padding: 16px 20px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #141d2a; }
-    .lb-title { font-size: 1.1rem; font-weight: 900; font-style: italic; color: #ffffff; display: flex; align-items: center; gap: 8px; }
-    .lb-tabs { display: flex; gap: 6px; padding: 12px 16px 0; }
-    .lb-tab { flex: 1; padding: 8px; background: #0f141d; border: 1.5px solid #1e2634; border-radius: 8px; font-size: 0.78rem; font-weight: 900; color: #64748b; cursor: pointer; text-align: center; transition: all 0.15s; }
-    .lb-tab.active { background: #111827; border-color: #ffffff; color: #ffffff; }
-    .lb-list { padding: 10px 14px; display: flex; flex-direction: column; gap: 7px; }
-    .lb-row { display: flex; align-items: center; gap: 12px; background: #0f141d; border: 1.5px solid #1e2634; border-radius: 12px; padding: 11px 14px; position: relative; transition: border-color 0.15s; }
-    .lb-row:hover { border-color: #2a3550; }
-    .lb-row.top1 { border-color: #facc15; background: linear-gradient(135deg, #0f141d 0%, #1a1500 100%); }
-    .lb-row.top2 { border-color: #94a3b8; }
-    .lb-row.top3 { border-color: #c2774a; }
-    .lb-rank { font-size: 0.85rem; font-weight: 900; color: #64748b; width: 22px; text-align: center; flex-shrink: 0; }
-    .lb-rank.r1 { color: #facc15; font-size: 1.1rem; }
-    .lb-rank.r2 { color: #94a3b8; }
-    .lb-rank.r3 { color: #c2774a; }
-    .lb-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: #1a2230; border: 2px solid #334155; flex-shrink: 0; }
-    .lb-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .lb-name { flex: 1; font-size: 0.9rem; font-weight: 900; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lb-val { font-size: 0.82rem; font-weight: 900; color: #facc15; text-align: right; flex-shrink: 0; }
-    .lb-empty { text-align: center; color: #475569; font-size: 0.85rem; padding: 30px 0; }
-    .lb-loading { display: flex; align-items: center; justify-content: center; padding: 30px 0; gap: 10px; color: #64748b; font-size: 0.85rem; font-weight: 800; }
-
     /* FOOTER */
     .kd-footer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); background: #070a0f; border-top: 1.5px solid #131b26; border-left: 1.5px solid #131b26; border-right: 1.5px solid #131b26; border-radius: 14px 14px 0 0; padding: 10px 12px; display: flex; gap: 8px; align-items: center; z-index: 90; width: 100%; max-width: 480px; }
     .kd-footer-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: #0f141d; border: 1.5px solid #1e2634; border-radius: 10px; padding: 9px 6px; cursor: pointer; color: #64748b; font-size: 0.62rem; font-weight: 900; text-align: center; transition: all 0.15s; }
@@ -356,7 +330,6 @@
     </div>
     
     <div class="header-right">
-      <!-- HAMBURGER - badge eklendi -->
       <button class="btn-header-mono" onclick="toggleSideNav()" title="Menu & Chat">
         <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
         <div class="menu-notif-badge" id="menuNotifBadge">0</div>
@@ -382,7 +355,6 @@
         <div class="side-icon-box">🪙</div>
         <span>COINFLIP</span>
       </div>
-      <!-- TICKET TRANSACTIONS TAB -->
       <div class="side-icon-item" id="sideTabTickets" onclick="switchSideTab('tickets')">
         <div class="side-icon-box">🎫</div>
         <span>TICKETS</span>
@@ -395,14 +367,12 @@
         <div class="ticket-badge-pill" id="userTicketBadge">Pending</div>
       </div>
 
-      <!-- LEADERBOARD TAB -->
       <div class="side-icon-item" id="sideTabLeaderboard" onclick="switchSideTab('leaderboard')">
         <div class="side-icon-box">🏆</div>
         <span>TOP</span>
       </div>
 
-      <!-- DISCORD LINK -->
-      <a class="side-icon-item" id="sideDiscordBtn" href="DISCORD_LINK_BURAYA" target="_blank" style="text-decoration:none; color:#5865F2; margin-top:auto;">
+      <a class="side-icon-item" id="sideDiscordBtn" href="#" target="_blank" style="text-decoration:none; color:#5865F2; margin-top:auto;">
         <div class="side-icon-box" style="border-color:#5865F2; background:#0d1020;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#5865F2" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
         </div>
@@ -497,7 +467,7 @@
         </div>
       </div>
 
-      <!-- Verme Sistemi button - only shown for emirwg -->
+      <!-- Verme Sistemi button -->
       <div id="vermeButtonWrapper" style="display:none; margin-bottom:12px;">
         <button onclick="openVermeView()" style="width:100%; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; font-weight:900; border:none; border-radius:10px; padding:13px; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(168,85,247,0.4);">
           🎁 Give System
@@ -516,7 +486,6 @@
         <button onclick="closeVermeView()" style="background:#18202c; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 14px; font-size:0.82rem; font-weight:800; cursor:pointer;">← Back</button>
       </div>
 
-      <!-- User Search -->
       <div class="verme-search-bar">
         <input type="text" id="vermeSearchInput" class="verme-search-input" placeholder="Enter username (e.g. PlayerName)" autocomplete="off" onkeydown="if(event.key==='Enter') searchVermeUser()">
         <button class="verme-search-btn" onclick="searchVermeUser()">🔍 Search</button>
@@ -791,6 +760,16 @@
   </div>
 
   <script>
+    // ===== RENDER BACKEND BRIDGE (Otomatik Köprü) =====
+    const BACKEND_URL = 'https://knifeduels-backend-2.onrender.com';
+    const _origFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (typeof url === 'string' && url.startsWith('/api/')) {
+        url = BACKEND_URL + url;
+      }
+      return _origFetch(url, options);
+    };
+
     let socket = null;
     let currentUser = null;
     let selectedCoin = 'K';
@@ -812,9 +791,7 @@
 
     // ===== NOTIFICATION BADGE SYSTEM =====
     let menuUnreadCount = 0;
-    // ticketId -> unread msg count (for tickets tab per-card badge)
     let ticketUnreadMap = {};
-    // set of ticket IDs seen by user (tickets panel opened = all cleared)
     let seenTicketIds = new Set();
 
     function incrementMenuBadge(amount = 1) {
@@ -862,7 +839,6 @@
       const tabTickets = document.getElementById('sideTabTickets');
       const tabLb = document.getElementById('sideTabLeaderboard');
 
-      // Hide all panels, deactivate all tabs
       [chatPanel, ticketsPanel, lbPanel].forEach(p => { if(p) { p.style.display = 'none'; p.classList.remove('active'); } });
       [tabChat, tabTickets, tabLb].forEach(t => { if(t) t.classList.remove('active'); });
 
@@ -897,8 +873,6 @@
 
       const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
       const myName = (currentUser?.name || '').toLowerCase();
-
-      // Owners see all tickets; regular users see only their own
       const visible = isOwner ? tickets : tickets.filter(t => (t.user || '').toLowerCase() === myName);
 
       if (!visible.length) {
@@ -938,7 +912,6 @@
 
     function openTicketFromPanel(ticketId) {
       const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
-      // Clear unread for this ticket
       ticketUnreadMap[ticketId] = 0;
       seenTicketIds.add(ticketId);
       renderTicketTransactions();
@@ -951,8 +924,6 @@
         openUserTicketView(ticketId);
       }
     }
-
-    // ===== ORIGINAL CODE (unchanged) =====
 
     function getMyMatchesStorageKey() {
       return 'kd_my_matches_' + (currentUser ? currentUser.name.toLowerCase() : 'guest');
@@ -1047,7 +1018,6 @@
       fetchInitialTickets();
       fetchInitialGiveaway();
       setupWebSocket();
-      // Check for saved giveaway winner
       try {
         const savedWinner = localStorage.getItem('kd_gw_winner');
         if (savedWinner) {
@@ -1055,7 +1025,6 @@
           if (wData && wData.winner) showGiveawayWinner(wData);
         }
       } catch(e) {}
-      // init side tab to chat
       switchSideTab('chat');
     });
 
@@ -1089,8 +1058,8 @@
 
     function setupWebSocket() {
       try {
-        const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        socket = new WebSocket(`${wsProto}//${location.host}`);
+        // Canlı Render WebSocket Bağlantısı
+        socket = new WebSocket('wss://knifeduels-backend-2.onrender.com');
         socket.onmessage = (e) => {
           const data = JSON.parse(e.data);
           if (data.type === 'sync_matches') {
@@ -1106,7 +1075,6 @@
           } else if (data.type === 'ticket_created') {
             tickets.unshift(data.ticket);
             updateAllTicketCounters();
-            // NEW TICKET → badge on hamburger + tickets tab
             const sideOpen = document.getElementById('sideNavWrapper').classList.contains('open');
             if (!sideOpen || currentSideTab !== 'tickets') {
               incrementMenuBadge(1);
@@ -1118,7 +1086,6 @@
             if (t) {
               if (!t.messages) t.messages = [];
               t.messages.push(data.message);
-              // Track unread per ticket
               const sideOpen = document.getElementById('sideNavWrapper').classList.contains('open');
               const ticketsTabActive = sideOpen && currentSideTab === 'tickets';
               if (!ticketsTabActive) {
@@ -1220,7 +1187,6 @@
       loadMoreBtn.style.display = (displayedCount < filteredInventory.length) ? 'block' : 'none';
     }
 
-    // ===== WITHDRAW - MULTI SELECT =====
     let withdrawSelectedIds = new Set();
 
     function promptWithdraw(itemId) {
@@ -1324,7 +1290,6 @@
         ]
       };
 
-      // Remove selected items from inventory
       const removedIds = new Set(selectedItems.map(i => i.id));
       fullInventory = fullInventory.filter(i => !removedIds.has(i.id));
       filteredInventory = [...fullInventory];
@@ -1338,7 +1303,6 @@
       showToast(`Withdraw request submitted! Check the Tickets tab 📤`, "success");
     }
 
-    // Giveaway confirmation state
     let pendingGiveawayItemId = null;
     let gwConfirmTimer = null;
 
@@ -1683,7 +1647,6 @@
     }
     function closeResultPopup() {
       document.getElementById('resultPopup').style.display = "none";
-      // Ekranı yenile - coinflip sonrası temiz başlangıç
       setTimeout(() => { location.reload(); }, 150);
     }
 
@@ -1820,7 +1783,6 @@
       btn.innerHTML = `<span class="btn-spinner"></span> Verifying...`;
       btn.disabled = true;
 
-      // Remove any previous error box
       const oldErr = document.getElementById('verifyErrorBox');
       if (oldErr) oldErr.remove();
 
@@ -1840,7 +1802,6 @@
           updateAllTicketCounters();
           showToast(`✅ Successfully logged in! Welcome @${currentUser.name}`, "success");
         } else {
-          // Show inline error inside modal
           const errBox = document.createElement('div');
           errBox.id = 'verifyErrorBox';
           errBox.style.cssText = 'background:#2d0a0a; border:1.5px solid #ef4444; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:0.82rem; color:#f87171; font-weight:800; line-height:1.5;';
@@ -1885,7 +1846,6 @@
 
     function renderLoggedInState() {
       const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
-      // Show Verme Sistemi button only for emirwg
       const vermeBtn = document.getElementById('vermeButtonWrapper');
       if (vermeBtn) vermeBtn.style.display = isOwner ? 'block' : 'none';
       document.getElementById('auth-container').innerHTML = `
@@ -1921,7 +1881,6 @@
       w.classList.toggle('open');
       o.style.display = w.classList.contains('open') ? 'block' : 'none';
       if (!wasOpen && w.classList.contains('open')) {
-        // Opened - clear hamburger badge
         clearMenuBadge();
       }
     }
@@ -1935,7 +1894,7 @@
       const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
       const myName = (currentUser?.name || "").toLowerCase();
       const myTickets = tickets.filter(t => (t.user || "").toLowerCase() === myName);
-      const myTicket = myTickets[0]; // first ticket for badge display
+      const myTicket = myTickets[0];
       const navBtn = document.getElementById('navDepositTicketBtn');
       const badge = document.getElementById('userTicketBadge');
 
@@ -1958,7 +1917,6 @@
           headerBadge.style.display = 'none';
         }
       }
-      // Also update Ticket Logs button count in dropdown
       const tlCount = document.getElementById('ticketLogsCount');
       if (tlCount) {
         const pendingCount = tickets.filter(t => (t.status||'').toLowerCase() === 'pending').length;
@@ -1998,7 +1956,6 @@
           extraInfo.innerText = `Don't forget to accept the Roblox trade request`;
         }
       }
-      // Clear unread for this ticket
       ticketUnreadMap[myTicket.id] = 0;
       seenTicketIds.add(myTicket.id);
       renderTicketTransactions();
@@ -2013,7 +1970,6 @@
       if (ticketId) {
         myTicket = tickets.find(t => t.id === ticketId);
       } else {
-        // Find the ticket currently open in the modal from title
         const titleEl = document.getElementById('uTicketTitle');
         const openId = titleEl ? titleEl.innerText : '';
         myTicket = tickets.find(t => t.id === openId && (t.user || "").toLowerCase() === myName)
@@ -2033,7 +1989,6 @@
       const input = document.getElementById('uTicketInput');
       const text = input.value.trim();
       if (!text || !currentUser) return;
-      // Get the currently open ticket ID from the title element
       const titleEl = document.getElementById('uTicketTitle');
       const openId = titleEl ? titleEl.innerText : '';
       const myName = (currentUser.name || "").toLowerCase();
@@ -2083,10 +2038,8 @@
       const t = tickets.find(x => x.id === ticketId);
       if (!t) return;
       t.status = 'Closed';
-      // Send close message to server via WS
       if (socket && socket.readyState === 1) {
         socket.send(JSON.stringify({ type: 'close_ticket', ticketId }));
-        // Also send a system message
         const sysMsg = { sender: 'System', text: '🔒 Ticket closed by admin.', isSystem: true, time: new Date().toLocaleTimeString() };
         socket.send(JSON.stringify({ type: 'ticket_message', ticketId, message: sysMsg }));
         if (!t.messages) t.messages = [];
@@ -2095,7 +2048,6 @@
       updateAllTicketCounters();
       renderTicketTransactions();
       renderAdminTicketList();
-      // If this ticket is open in the chat modal, update its status
       const statusEl = document.getElementById('uTicketStatus');
       if (statusEl && document.getElementById('uTicketTitle')?.innerText === ticketId) {
         statusEl.innerText = 'Closed';
@@ -2119,19 +2071,15 @@
       if (!t) return;
 
       const isWithdraw = t.ticketType === 'withdraw';
-
-      // Update type badge
       const typeBadge = document.getElementById('admTicketTypeBadge');
       if (typeBadge) {
         typeBadge.className = `tt-type-badge ${isWithdraw ? 'tt-type-withdraw' : 'tt-type-deposit'}`;
         typeBadge.innerText = isWithdraw ? '📤 WITHDRAW' : '📥 DEPOSIT';
       }
 
-      // Update title
       const titleEl = document.getElementById('admTicketChatTitle');
       if (titleEl) titleEl.innerText = `${t.id} — @${t.user}`;
 
-      // Update info bar
       const infoBar = document.getElementById('admTicketInfoBar');
       if (infoBar) {
         if (isWithdraw) {
@@ -2160,7 +2108,6 @@
         }
       }
 
-      // Update action bar
       const actionBar = document.getElementById('admTicketActionBar');
       if (actionBar) {
         const alreadyClosed = (t.status||'').toLowerCase() === 'closed';
@@ -2181,7 +2128,6 @@
       const text = input.value.trim();
       if (!text || !currentAdminViewingTicketId) return;
       if (text.startsWith('.ver')) {
-        // .ver @username BrainrotName
         const parts = text.trim().split(' ');
         const targetUser = (parts[1] || '').replace('@', '').trim();
         const brainrotName = parts.slice(2).join(' ').trim();
@@ -2189,14 +2135,12 @@
         if (!targetUser) return showToast("Usage: .ver @username BrainrotName", "error");
 
         const brainrotToAdd = brainrotName || (() => {
-          // fallback: use ticket's brainrot if no name given
           const t = tickets.find(x => x.id === currentAdminViewingTicketId);
           return t ? t.brainrot : '';
         })();
 
         if (!brainrotToAdd) return showToast("Specify a brainrot name: .ver @username BrainrotName", "error");
 
-        // Send grant command to server
         if (socket && socket.readyState === 1) {
           socket.send(JSON.stringify({
             type: 'admin_grant_gems',
@@ -2207,7 +2151,6 @@
           }));
         }
 
-        // Send a system message to the ticket chat
         const sysMsg = {
           sender: 'System',
           text: `✅ ITEM DELIVERED\n\n🎭 ${brainrotToAdd} has been added to @${targetUser}'s inventory.\n🛡️ Verified by @${currentUser.name}`,
@@ -2217,7 +2160,6 @@
         if (socket && socket.readyState === 1) {
           socket.send(JSON.stringify({ type: 'ticket_message', ticketId: currentAdminViewingTicketId, message: sysMsg }));
         }
-        // Also push locally
         const localTicket = tickets.find(x => x.id === currentAdminViewingTicketId);
         if (localTicket) {
           if (!localTicket.messages) localTicket.messages = [];
@@ -2237,10 +2179,9 @@
     }
 
     // ===== GIVE SYSTEM =====
-    // Catalog = emirwg's own inventory (shown as infinite - giving doesn't remove from their stock)
     let vermeTargetUser = null;
-    let vermeActiveTab = 'target'; // 'target' | 'catalog'
-    let vermeCatalogQty = {}; // itemName -> quantity to give
+    let vermeActiveTab = 'target';
+    let vermeCatalogQty = {};
 
     function openVermeView() {
       hideAll();
@@ -2350,7 +2291,6 @@
     }
 
     function renderVermeCatalog() {
-      // Build a deduplicated list from emirwg's actual inventory
       const seen = new Set();
       const uniqueItems = fullInventory.filter(item => {
         if (seen.has(item.name)) return false;
@@ -2397,7 +2337,6 @@
 
       const itemsToGive = [];
       for (const [name, qty] of entries) {
-        // Find item details from emirwg's inventory (for value/image)
         const srcItem = fullInventory.find(i => i.name === name);
         for (let i = 0; i < qty; i++) {
           itemsToGive.push({
@@ -2409,13 +2348,11 @@
         }
       }
 
-      // NOTE: emirwg's inventory is NOT reduced — it's infinite stock
       if (!vermeTargetUser.inventory) vermeTargetUser.inventory = [];
       vermeTargetUser.inventory.push(...itemsToGive);
 
       const totalGiven = Object.values(vermeCatalogQty).reduce((a,b)=>a+b,0);
       try {
-        // Only sync TARGET user — emirwg's inventory unchanged
         await fetch('/api/sync-user', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ username: vermeTargetUser.name, inventory: vermeTargetUser.inventory, profit: vermeTargetUser.profit })
@@ -2471,21 +2408,6 @@
       renderVermePanels();
     }
 
-    // ===== FOOTER NAV =====
-    function footerNav(tab) {
-      document.querySelectorAll('.kd-footer-btn').forEach(b => b.classList.remove('active'));
-      if (tab === 'home') {
-        document.getElementById('footerBtnHome').classList.add('active');
-        openCoinflipView();
-      } else if (tab === 'lb') {
-        document.getElementById('footerBtnLb').classList.add('active');
-        openLb();
-      } else if (tab === 'inv') {
-        document.getElementById('footerBtnInv').classList.add('active');
-        openInventoryView();
-      }
-    }
-
     // ===== LEADERBOARD =====
     let currentLbTab = 'profit';
 
@@ -2512,34 +2434,6 @@
       } catch(e) {
         container.innerHTML = '<div class="lb-empty">No data yet 😕<br><span style="font-size:0.75rem;color:#334155;">Play some duels to appear here!</span></div>';
       }
-    }
-
-    function buildLbFromLocal(tab) {
-      // Mevcut matches ve kayıtlı match verilerinden leaderboard oluştur
-      const allMatches = [...matches];
-      // Tüm kullanıcıların match geçmişlerinden topla
-      const profileMap = {};
-
-      allMatches.filter(m => m.status === 'finished').forEach(m => {
-        const addUser = (name, avatar, won, val) => {
-          if (!name) return;
-          const key = name.toLowerCase();
-          if (!profileMap[key]) profileMap[key] = { name, avatar: avatar || '', wins: 0, losses: 0, profit: 0, totalVal: 0 };
-          if (won) { profileMap[key].wins++; profileMap[key].profit += val || 0; }
-          else { profileMap[key].losses++; profileMap[key].profit -= val || 0; }
-          profileMap[key].totalVal += val || 0;
-        };
-        const creatorWon = m.winnerSide === m.side;
-        addUser(m.creatorName, m.creatorAvatar, creatorWon, m.value);
-        addUser(m.opponent?.name, m.opponent?.avatar, !creatorWon, m.value);
-      });
-
-      let rows = Object.values(profileMap);
-      if (tab === 'profit') rows.sort((a, b) => b.profit - a.profit);
-      else if (tab === 'duels') rows.sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
-      else if (tab === 'val') rows.sort((a, b) => b.totalVal - a.totalVal);
-
-      renderLbRows(rows.slice(0, 20), tab);
     }
 
     function renderLbRows(rows, tab) {
