@@ -305,6 +305,142 @@
     .ticket-bubble.admin { align-self: flex-start; background: #000000; color: #ffffff; border: 1.5px solid #334155; }
     .ticket-bubble.system { align-self: stretch; background: #450a0a; color: #f87171; border: 1.5px solid #991b1b; font-size: 0.82rem; font-weight: 700; }
 
+    
+    /* ===== BLOXLUCK EXACT MATCH CARD STYLES ===== */
+    .blox-duel-card {
+      background: #0e131d;
+      border: 1.5px solid #1c2433;
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+    .blox-duel-card:hover {
+      border-color: #2a374d;
+    }
+    .card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-creator-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-creator-info .card-player-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #ffffff;
+      max-width: 170px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-value-box {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.15;
+    }
+    .card-val-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+    .card-val-num {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 1px 0;
+    }
+    .card-val-range {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.3px;
+    }
+    .card-items-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-height: 40px;
+      padding: 2px 0;
+    }
+    .card-item-thumb {
+      width: 38px;
+      height: 38px;
+      background: #080b10;
+      border: 1.5px solid #1a2332;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 3px;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card-item-thumb:hover {
+      transform: scale(1.1);
+      border-color: #38bdf8;
+    }
+    .card-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .card-bottom-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .btn-blox-join {
+      flex: 1;
+      background-color: #00df81;
+      color: #000000;
+      font-weight: 900;
+      font-size: 0.92rem;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 223, 129, 0.25);
+      transition: all 0.15s ease;
+      letter-spacing: 0.2px;
+    }
+    .btn-blox-join:hover {
+      background-color: #05f08c;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0, 223, 129, 0.35);
+    }
+    .btn-blox-cancel {
+      flex: 1;
+      background-color: #ef4444;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 0.92rem;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+      transition: all 0.15s ease;
+    }
+    .btn-blox-cancel:hover {
+      background-color: #dc2626;
+      transform: translateY(-1px);
+    }
+
     /* ===== DESKTOP RESPONSIVE (BLOXLUCK STYLE) ===== */
     @media (min-width: 768px) {
       body {
@@ -1841,64 +1977,76 @@
         const cAvatar = getSafeAvatar(m.creatorAvatar, m.creatorName);
         const matchVal = Number(m.value) || 100000000;
 
+        // ±5% Bloxluck toleransı
+        const minAllowed = Math.floor(matchVal * 0.95);
+        const maxAllowed = Math.ceil(matchVal * 1.05);
+
         if (m.status === 'finished') {
           const winnerSide = m.winnerSide || 'K';
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
           const winnerChipHtml = winnerSide === 'K'
-            ? `<div class="chip chip-black" style="width:52px;height:52px;font-size:1.5rem;border-width:3px;">K</div>`
-            : `<div class="chip chip-white" style="width:52px;height:52px;font-size:1.5rem;border-width:3px;">D</div>`;
+            ? `<div class="chip chip-black" style="width:46px;height:46px;font-size:1.3rem;border-width:2.5px;">K</div>`
+            : `<div class="chip chip-white" style="width:46px;height:46px;font-size:1.3rem;border-width:2.5px;">D</div>`;
 
           return `
           <div class="blox-duel-card is-finished">
-            <div class="card-players-col">
-              <div class="card-player-row">
-                <div class="card-player-info">
-                  <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.65rem;">${p1Side}</span>
-                  <div class="card-avatar"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
-                  <span class="card-player-name">${m.creatorName}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.62rem;">${p1Side}</span>
+                  <div class="card-avatar" style="width:26px;height:26px;"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
+                  <span class="card-player-name" style="font-size:0.85rem; font-weight:800;">${m.creatorName}</span>
+                  <div class="card-items-row" style="margin-left:6px; min-height:auto;">
+                    ${(m.items || []).map(i => `<div class="card-item-thumb" style="width:28px;height:28px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
+                  </div>
                 </div>
-                <div class="card-items-preview">
-                  ${(m.items || []).map(i => `<span class="match-gem-tag"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"> ${i.name}</span>`).join('')}
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.62rem;">${p2Side}</span>
+                  <div class="card-avatar" style="width:26px;height:26px;"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
+                  <span class="card-player-name" style="font-size:0.85rem; font-weight:800;">${m.opponent?.name || 'Opponent'}</span>
+                  <div class="card-items-row" style="margin-left:6px; min-height:auto;">
+                    ${(m.opponentItems || []).map(i => `<div class="card-item-thumb" style="width:28px;height:28px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
+                  </div>
                 </div>
-                <div class="card-val-row">Value: <span>${matchVal.toLocaleString()}</span></div>
               </div>
-              <div style="border-top: 1px solid #1e2634; margin: 4px 0;"></div>
-              <div class="card-player-row">
-                <div class="card-player-info">
-                  <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.65rem;">${p2Side}</span>
-                  <div class="card-avatar"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
-                  <span class="card-player-name">${m.opponent?.name || 'Opponent'}</span>
-                </div>
-                <div class="card-items-preview">
-                  ${(m.opponentItems || []).map(i => `<span class="match-gem-tag"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"> ${i.name}</span>`).join('')}
-                </div>
-                <div class="card-val-row">Value: <span>${matchVal.toLocaleString()}</span></div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding-left:14px;">
+                ${winnerChipHtml}
+                <span style="font-size:0.75rem; color:#94a3b8; font-weight:800;">${matchVal.toLocaleString()}</span>
               </div>
-            </div>
-            <div style="display:flex; align-items:center; justify-content:center; padding-left:10px;">
-              ${winnerChipHtml}
             </div>
           </div>`;
         }
 
+        // Bloxluck Birebir Kart Tasarımı
         return `
         <div class="blox-duel-card">
-          <div class="card-players-col">
-            <div class="card-player-info">
+          <div class="card-top-row">
+            <div class="card-creator-info">
               <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}">${p1Side}</span>
               <div class="card-avatar"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
               <span class="card-player-name">${m.creatorName}</span>
             </div>
-            <div class="card-items-preview">
-              ${(m.items || []).map(i => `<span class="match-gem-tag"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"> ${i.name}</span>`).join('')}
+            <div class="card-value-box">
+              <span class="card-val-label">Value</span>
+              <span class="card-val-num">${matchVal.toLocaleString()}</span>
+              <span class="card-val-range">${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}</span>
             </div>
-            <div class="card-val-row">Value: <span>${matchVal.toLocaleString()}</span></div>
           </div>
-          <div class="card-action-col">
+
+          <div class="card-items-row">
+            ${(m.items || []).map(i => `
+              <div class="card-item-thumb" title="${i.name} (${(Number(i.value) || 100000000).toLocaleString()})">
+                <img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')">
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="card-bottom-row">
+            <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" title="Your Side: ${p2Side}">${p2Side}</span>
             ${isMy ? `
-              <button class="btn-card-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
+              <button class="btn-blox-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <button class="btn-card-join" onclick="openJoinMatchModal('${m.id}')">Join<br>(${matchVal.toLocaleString()})</button>
+              <button class="btn-blox-join" onclick="openJoinMatchModal('${m.id}')">Join Match (${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()})</button>
             `}
           </div>
         </div>`;
@@ -2034,8 +2182,12 @@
       joinSelectedIds = new Set();
 
       const matchVal = Number(m.value) || 100000000;
+      const minAllowed = Math.floor(matchVal * 0.95);
+      const maxAllowed = Math.ceil(matchVal * 1.05);
+
       document.getElementById('joinTargetValDisplay').innerText = `${matchVal.toLocaleString()} Value`;
-      document.getElementById('joinSelectedValDisplay').innerText = `Your Selected: 0 Value`;
+      document.getElementById('joinSelectedValDisplay').innerText = `Allowed Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}
+Your Selected: 0 Value`;
 
       const errBox = document.getElementById('joinMatchErrorBox');
       errBox.style.display = 'none';
@@ -2080,11 +2232,19 @@
       });
       const m = matches.find(x => x.id === pendingJoinMatchId);
       const target = m ? (Number(m.value) || 100000000) : 0;
-      const minAllowed = target - 20000;
-      const maxAllowed = target + 150000;
+      const minAllowed = Math.floor(target * 0.95);
+      const maxAllowed = Math.ceil(target * 1.05);
       const display = document.getElementById('joinSelectedValDisplay');
-      display.innerText = `Your Selected: ${total.toLocaleString()} / ${target.toLocaleString()} Value`;
-      display.style.color = (total >= minAllowed && total <= maxAllowed) ? '#22c55e' : '#ef4444';
+      const inRange = total >= minAllowed && total <= maxAllowed;
+
+      display.innerText = `Selected: ${total.toLocaleString()} / Target: ${target.toLocaleString()}
+Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
+      display.style.color = inRange ? '#00df81' : '#ef4444';
+
+      const btn = document.getElementById('btnConfirmJoinDuel');
+      if (btn) {
+        btn.innerText = inRange ? `CONFIRM & DUEL (${total.toLocaleString()})` : `CONFIRM & DUEL (${total.toLocaleString()})`;
+      }
     }
 
     function closeJoinMatchModal() {
@@ -2103,8 +2263,8 @@
       const errBox = document.getElementById('joinMatchErrorBox');
 
       const matchTarget = Number(m.value) || 100000000;
-      const minAllowed = matchTarget - 20000;
-      const maxAllowed = matchTarget + 150000;
+      const minAllowed = Math.floor(matchTarget * 0.95);
+      const maxAllowed = Math.ceil(matchTarget * 1.05);
 
       if (!chosenItems.length) {
         errBox.style.display = 'block';
@@ -2113,12 +2273,12 @@
       }
       if (totalVal < minAllowed) {
         errBox.style.display = 'block';
-        errBox.innerText = `❌ Value too low! Selected: ${totalVal.toLocaleString()} (Min allowed: ${minAllowed.toLocaleString()})`;
+        errBox.innerText = `❌ Value too low! Selected: ${totalVal.toLocaleString()} (Min allowed: ${minAllowed.toLocaleString()} [-5%])`;
         return;
       }
       if (totalVal > maxAllowed) {
         errBox.style.display = 'block';
-        errBox.innerText = `❌ Value too high! Selected: ${totalVal.toLocaleString()} (Max allowed: ${maxAllowed.toLocaleString()})`;
+        errBox.innerText = `❌ Value too high! Selected: ${totalVal.toLocaleString()} (Max allowed: ${maxAllowed.toLocaleString()} [+5%])`;
         return;
       }
 
