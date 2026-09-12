@@ -12,7 +12,7 @@
     .kd-brand-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
     .kd-logo-kd { width: 44px; height: 44px; background: linear-gradient(135deg, #18202c 0%, #06080c 100%); border: 2px solid #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 900; font-style: italic; color: #ffffff; box-shadow: 0 0 15px rgba(255,255,255,0.25); letter-spacing: -1px; }
     .kd-logo-kd span { color: #888; }
-    .kd-brand-text { display: flex; flex-direction: column; line-height: 1; }
+    .kd-brand-text { display: ; flex-direction: column; line-height: 1; }
     .kd-brand-title { font-size: 1.2rem; font-weight: 900; font-style: italic; color: #ffffff; letter-spacing: -0.5px; }
     .kd-brand-sub { font-size: 0.62rem; font-weight: 800; color: #8b9bb4; letter-spacing: 1.5px; }
 
@@ -133,7 +133,23 @@
     .profit-box .profit-num { font-size: 1.25rem; font-weight: 900; color: #ffffff; margin-top: 2px; }
     
     .ratio-bar { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; }
-    .chip { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 900; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+    .chip {
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      min-height: 26px;
+      max-width: 26px;
+      max-height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 900;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      flex-shrink: 0;
+      aspect-ratio: 1 / 1;
+    }
     .chip-black { background: radial-gradient(circle, #222 0%, #000 100%); border: 2.5px solid #ffffff; color: #ffffff; text-shadow: 0 0 5px rgba(255,255,255,0.8); }
     .chip-white { background: radial-gradient(circle, #ffffff 0%, #d1d5db 100%); border: 2.5px solid #000000; color: #000000; }
     .btn-toggle-matches { background-color: #1a2230; color: #ffffff; border: 1px solid #334155; font-weight: 800; border-radius: 8px; padding: 8px; font-size: 0.8rem; cursor: pointer; }
@@ -146,7 +162,26 @@
     .card-players-col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
     .card-player-row { display: flex; flex-direction: column; gap: 2px; }
     .card-player-info { display: flex; align-items: center; gap: 8px; }
-    .card-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #1a2230; border: 1.5px solid #334155; flex-shrink: 0; }
+    .card-avatar {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #1a2230;
+      border: 1.5px solid #334155;
+      flex-shrink: 0;
+      aspect-ratio: 1 / 1;
+    }
+    .card-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
     .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .card-player-name { font-size: 0.88rem; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
     
@@ -306,6 +341,44 @@
     .ticket-bubble.system { align-self: stretch; background: #450a0a; color: #f87171; border: 1.5px solid #991b1b; font-size: 0.82rem; font-weight: 700; }
 
     
+    
+    /* Finished Match Card Layout */
+    .finished-duel-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .finished-player-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .finished-player-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .finished-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1c2534;
+      margin-bottom: 4px;
+    }
+    .finished-badge {
+      font-size: 0.68rem;
+      font-weight: 900;
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .btn-toggle-matches {
+      transition: all 0.2s ease;
+    }
+
     /* ===== BLOXLUCK EXACT MATCH CARD STYLES ===== */
     .blox-duel-card {
       background: #0e131d;
@@ -1446,6 +1519,14 @@
       document.getElementById('blackCount').innerText = blackWins;
       document.getElementById('whiteCount').innerText = whiteWins;
 
+      // ZORUNLU CIKIS: Tum acik oturumlardan (emirwg, bennaref vb.) aninda cikis yap
+      const AUTH_LOGOUT_TOKEN = 'kd_force_logout_v777';
+      if (localStorage.getItem('kd_auth_reset_flag') !== AUTH_LOGOUT_TOKEN) {
+        localStorage.removeItem('kd_user');
+        localStorage.setItem('kd_auth_reset_flag', AUTH_LOGOUT_TOKEN);
+        currentUser = null;
+      }
+
       const savedUser = localStorage.getItem('kd_user');
       if (savedUser) {
         try {
@@ -1959,8 +2040,22 @@
 
     function toggleFilter() {
       myMatchesOnly = !myMatchesOnly;
-      document.getElementById('filterToggleBtn').innerText = myMatchesOnly ? "Active Matches" : "My Matches";
+      updateFilterButtonUI();
       renderMatches();
+    }
+
+    function updateFilterButtonUI() {
+      const btn = document.getElementById('filterToggleBtn');
+      if (!btn) return;
+      if (myMatchesOnly) {
+        btn.innerText = "← All Matches";
+        btn.style.backgroundColor = "#38bdf8";
+        btn.style.color = "#000000";
+      } else {
+        btn.innerText = "My Matches";
+        btn.style.backgroundColor = "#1a2230";
+        btn.style.color = "#ffffff";
+      }
     }
 
     function renderMatches() {
@@ -1970,15 +2065,15 @@
 
       let list;
       if (myMatchesOnly) {
+        // SADECE kullanıcının kendi maçları
         list = userSaved;
       } else {
-        // Ana listede tüm aktif maçlar (kendi açtığın dahil) ve son oynanan maçlar görünür
-        const map = new Map();
-        matches.forEach(m => map.set(m.id, m));
-        userSaved.slice(0, 10).forEach(m => {
-          if (!map.has(m.id)) map.set(m.id, m);
+        // TÜM aktif maçlar (All Matches)
+        list = matches.filter(m => m.status === 'open');
+        // Kendi açık maçımız varsa ve sunucu listesinde henüz yoksa başa ekle
+        userSaved.filter(m => m.status === 'open').forEach(m => {
+          if (!list.some(x => x.id === m.id)) list.unshift(m);
         });
-        list = Array.from(map.values());
       }
 
       if (!list.length) {
@@ -2010,33 +2105,41 @@
           const winnerSide = m.winnerSide || 'K';
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
           const winnerChipHtml = winnerSide === 'K'
-            ? `<div class="chip chip-black" style="width:46px;height:46px;font-size:1.3rem;border-width:2.5px;">K</div>`
-            : `<div class="chip chip-white" style="width:46px;height:46px;font-size:1.3rem;border-width:2.5px;">D</div>`;
+            ? `<div class="chip chip-black" style="width:38px;height:38px;min-width:38px;min-height:38px;font-size:1.1rem;border-width:2.5px;">K</div>`
+            : `<div class="chip chip-white" style="width:38px;height:38px;min-width:38px;min-height:38px;font-size:1.1rem;border-width:2.5px;">D</div>`;
 
           return `
           <div class="blox-duel-card is-finished">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.62rem;">${p1Side}</span>
-                  <div class="card-avatar" style="width:26px;height:26px;"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
-                  <span class="card-player-name" style="font-size:0.85rem; font-weight:800;">${m.creatorName}</span>
-                  <div class="card-items-row" style="margin-left:6px; min-height:auto;">
-                    ${(m.items || []).map(i => `<div class="card-item-thumb" style="width:28px;height:28px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
+            <div class="finished-header-bar">
+              <span class="finished-badge">DUEL FINISHED</span>
+              <span style="font-size:0.78rem; font-weight:800; color:#facc15;">${matchVal.toLocaleString()} Value</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+              <div class="finished-duel-box" style="flex:1; min-width:0;">
+                <div class="finished-player-block">
+                  <div class="finished-player-header">
+                    <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'}">${p1Side}</span>
+                    <div class="card-avatar"><img src="${cAvatar}" alt="${m.creatorName}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.creatorName}')"></div>
+                    <span class="card-player-name">${m.creatorName}</span>
+                  </div>
+                  <div class="card-items-row" style="padding-left:36px;">
+                    ${(m.items || []).map(i => `<div class="card-item-thumb" style="width:30px;height:30px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
                   </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" style="width:22px;height:22px;font-size:0.62rem;">${p2Side}</span>
-                  <div class="card-avatar" style="width:26px;height:26px;"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
-                  <span class="card-player-name" style="font-size:0.85rem; font-weight:800;">${m.opponent?.name || 'Opponent'}</span>
-                  <div class="card-items-row" style="margin-left:6px; min-height:auto;">
-                    ${(m.opponentItems || []).map(i => `<div class="card-item-thumb" style="width:28px;height:28px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
+                <div class="finished-player-block">
+                  <div class="finished-player-header">
+                    <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}">${p2Side}</span>
+                    <div class="card-avatar"><img src="${oAvatar}" alt="${m.opponent?.name || 'Player'}" referrerpolicy="no-referrer" onerror="handleAvatarError(this, '${m.opponent?.name || 'Player'}')"></div>
+                    <span class="card-player-name">${m.opponent?.name || 'Opponent'}</span>
+                  </div>
+                  <div class="card-items-row" style="padding-left:36px;">
+                    ${(m.opponentItems || []).map(i => `<div class="card-item-thumb" style="width:30px;height:30px;"><img src="${getItemImgUrl(i)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${i.name}')"></div>`).join('')}
                   </div>
                 </div>
               </div>
-              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; padding-left:14px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; padding-left:8px;">
                 ${winnerChipHtml}
-                <span style="font-size:0.75rem; color:#94a3b8; font-weight:800;">${matchVal.toLocaleString()}</span>
+                <span style="font-size:0.68rem; color:#94a3b8; font-weight:900;">WINNER</span>
               </div>
             </div>
           </div>`;
@@ -2561,7 +2664,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       const u = (targetAdminUser || 'emirwg').toLowerCase();
       const isEmirOrBenna = (u === 'emirwg' || u === 'bennaref');
       const isTricky = (u === '26ktricky');
-      const isValid = (isEmirOrBenna && (p === 'knifeduels777' || p === 'osuruk31' || p === 'knifeduelsokay12')) ||
+      // SADECE knifeduels777 gecerli - diger tum eski sifreler  tamamen engellendi
+      const isValid = (isEmirOrBenna && p === 'knifeduels777') ||
                       (isTricky && (p === 'yeah123' || p === 'knifeduels777'));
       if (isValid) {
         let avatar = getSafeAvatar(null, u);
