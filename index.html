@@ -304,6 +304,26 @@
     .ticket-bubble.user { align-self: flex-end; background: #1e3a5f; color: #ffffff; border: 1px solid #2563eb; }
     .ticket-bubble.admin { align-self: flex-start; background: #000000; color: #ffffff; border: 1.5px solid #334155; }
     .ticket-bubble.system { align-self: stretch; background: #450a0a; color: #f87171; border: 1.5px solid #991b1b; font-size: 0.82rem; font-weight: 700; }
+
+    /* ===== DESKTOP RESPONSIVE ===== */
+    @media (min-width: 768px) {
+      body { display: flex; flex-direction: column; align-items: center; }
+      header { width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 32px; }
+      .main-container { max-width: 580px; width: 100%; padding: 20px 16px; }
+      .side-nav-wrapper { width: 420px; max-width: 420px; }
+      .blox-duel-card { padding: 18px; }
+      .card-player-name { max-width: 220px; }
+      .controls-panel { padding: 16px 20px; }
+      .custom-popup-card, .modal-card, .arena-main-card, .result-popup-card, .ticket-log-card { max-width: 500px; }
+      .blox-auth-card { max-width: 440px; }
+      .ticket-chat-box { height: 340px; }
+      .modal-items-grid { max-height: 340px; }
+      .verme-items-list { max-height: 360px; }
+    }
+    @media (min-width: 1100px) {
+      .main-container { max-width: 680px; }
+      .side-nav-wrapper { width: 500px; max-width: 500px; }
+    }
   </style>
 </head>
 <body>
@@ -1116,9 +1136,31 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    let _wsReconnectTimer = null;
+    let _wsConnecting = false;
+
     function setupWebSocket() {
+      if (_wsConnecting) return;
+      _wsConnecting = true;
+      if (_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
       try {
         socket = new WebSocket('wss://knifeduels-backend-2.onrender.com');
+        socket.onopen = () => {
+          _wsConnecting = false;
+          // Bağlantı kurulunca match/ticket listesini yenile
+          fetchInitialMatches();
+          fetchInitialTickets();
+          fetchInitialGiveaway();
+        };
+        socket.onclose = () => {
+          _wsConnecting = false;
+          socket = null;
+          // 3 saniye sonra yeniden bağlan
+          _wsReconnectTimer = setTimeout(() => { setupWebSocket(); }, 3000);
+        };
+        socket.onerror = () => {
+          _wsConnecting = false;
+        };
         socket.onmessage = (e) => {
           const data = JSON.parse(e.data);
           if (data.type === 'sync_matches') {
@@ -1201,7 +1243,7 @@
             renderMatches();
           }
         };
-      } catch(e) {}
+      } catch(e) { _wsConnecting = false; }
     }
 
     function handleSendChat(event) {
@@ -2229,10 +2271,18 @@
       const myName = (currentUser.name || "").toLowerCase();
       const myTicket = tickets.find(t => t.id === openId && (t.user || "").toLowerCase() === myName)
         || tickets.find(t => (t.user || "").toLowerCase() === myName);
-      if (!myTicket) return;
+      if (!myTicket) return showToast("Ticket bulunamadı!", "error");
       const msg = { sender: currentUser.name, text, time: new Date().toLocaleTimeString() };
+      // Lokale ekle — socket onayı beklenmeden anında görünsün
+      if (!myTicket.messages) myTicket.messages = [];
+      myTicket.messages.push(msg);
+      renderUserTicketChat();
       if (socket && socket.readyState === 1) {
         socket.send(JSON.stringify({ type: 'ticket_message', ticketId: myTicket.id, message: msg }));
+      } else {
+        showToast("Bağlantı yok, mesaj gönderilemedi!", "error");
+        myTicket.messages.pop(); // başarısız olunca geri al
+        renderUserTicketChat();
       }
       input.value = '';
     }
@@ -2570,38 +2620,65 @@
       if (!entries.length) return showToast("Select at least one brainrot!", "error");
 
       const itemsToGive = [];
+      // Her item için kendi inventory'den gerçek objeleri al (sırayla)
+      const myInvCopy = [...fullInventory];
       for (const [name, qty] of entries) {
-        const srcItem = fullInventory.find(i => i.name === name);
-        for (let i = 0; i < qty; i++) {
-          itemsToGive.push({
-            id: 'br_' + Math.random().toString(36).substr(2,8),
-            name,
-            value: srcItem ? (srcItem.value || 100000000) : 100000000,
-            img: srcItem ? getItemImgUrl(srcItem) : `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(name.replace(/ /g,'_'))}.png`
-          });
+        let taken = 0;
+        for (let i = myInvCopy.length - 1; i >= 0 && taken < qty; i--) {
+          if (myInvCopy[i].name === name) {
+            itemsToGive.push({ ...myInvCopy[i] });
+            myInvCopy.splice(i, 1);
+            taken++;
+          }
+        }
+        // Eğer inventory'de yeterli yoksa kalan kadarını yine de ver
+        const shortage = qty - taken;
+        if (shortage > 0) {
+          const srcItem = fullInventory.find(i => i.name === name);
+          for (let s = 0; s < shortage; s++) {
+            itemsToGive.push({
+              id: 'br_' + Math.random().toString(36).substr(2,8),
+              name,
+              value: srcItem ? (srcItem.value || 100000000) : 100000000,
+              img: srcItem ? getItemImgUrl(srcItem) : `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(name.replace(/ /g,'_'))}.png`
+            });
+          }
         }
       }
+
+      // Kendi inventory'den verilen itemleri çıkar
+      fullInventory = myInvCopy;
+      filteredInventory = [...fullInventory];
 
       if (!vermeTargetUser.inventory) vermeTargetUser.inventory = [];
       vermeTargetUser.inventory.push(...itemsToGive);
 
-      const totalGiven = Object.values(vermeCatalogQty).reduce((a,b)=>a+b,0);
+      const totalGiven = itemsToGive.length;
+      const myProfit = parseInt(localStorage.getItem(getProfitStorageKey())||'0',10);
+
       try {
+        // Hedef kullanıcıyı güncelle
         await fetch('/api/sync-user', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ username: vermeTargetUser.name, inventory: vermeTargetUser.inventory, profit: vermeTargetUser.profit })
+        });
+        // Kendi inventory'sini de güncelle
+        await fetch('/api/sync-user', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ username: currentUser.name, inventory: fullInventory, profit: myProfit })
         });
         if (socket && socket.readyState === 1) {
           socket.send(JSON.stringify({
             type: 'user_data_updated',
             targetUser: vermeTargetUser.name,
             userData: { inventory: vermeTargetUser.inventory },
-            toast: `🎁 You received ${totalGiven} brainrot${totalGiven>1?'s':''} from @${currentUser.name}!`,
+            toast: `🎁 ${totalGiven} brainrot${totalGiven>1?'s':''} received from @${currentUser.name}!`,
             toastType: 'success'
           }));
         }
         showToast(`✅ Gave ${totalGiven} brainrot${totalGiven>1?'s':''} to @${vermeTargetUser.name}!`, "success");
         vermeCatalogQty = {};
+        renderInventory();
         renderVermePanels();
       } catch(e) {
         showToast("Server error!", "error");
