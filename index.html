@@ -1189,6 +1189,16 @@
               renderInventory();
               if (data.toast) showToast(data.toast, data.toastType || 'info');
             }
+          } else if (data.type === 'cancel_rejected') {
+            // Server cancel'ı reddetti — maça biri katılmış
+            showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
+            let _s = getMySavedMatches();
+            const _idx = _s.findIndex(m => m.id === data.matchId);
+            if (_idx !== -1 && data.match) {
+              _s[_idx] = { ..._s[_idx], ...data.match };
+              saveMySavedMatches(_s);
+            }
+            renderMatches();
           }
         };
       } catch(e) {}
