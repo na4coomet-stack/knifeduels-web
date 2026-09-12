@@ -686,7 +686,7 @@
     </div>
   </div>
 
-  <!-- JOIN MATCH VALUE-MATCH SELECTION MODAL -->
+  <!-- JOIN MATCH VALUE-MATCH SELECTION MODAL (MANUAL SELECTION) -->
   <div class="modal-overlay" id="joinMatchModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -699,7 +699,7 @@
         <div style="font-size:0.75rem; color:#38bdf8; font-weight:800; margin-top:4px;" id="joinSelectedValDisplay">Your Selected: 0 Value</div>
       </div>
       <div id="joinMatchErrorBox" style="display:none; background:#2d0a0a; border:1px solid #ef4444; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#f87171; font-weight:800; margin-bottom:10px;"></div>
-      <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Select items from your inventory to match or exceed the wager value (Allowed range: -20k up to +150k):</p>
+      <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">Select items from your inventory (-20k up to +150k tolerance):</p>
       <div class="modal-items-grid" id="joinItemsPicker"></div>
       <button class="blox-btn-primary" id="btnConfirmJoinDuel" style="width:100%; padding:14px;" onclick="confirmJoinMatchWager()">CONFIRM & DUEL</button>
     </div>
@@ -972,7 +972,9 @@
 
     function getMySavedMatches() {
       try {
-        return JSON.parse(localStorage.getItem(getMyMatchesStorageKey()) || '[]');
+        let list = JSON.parse(localStorage.getItem(getMyMatchesStorageKey()) || '[]');
+        // Sadece açık olan veya yeni bitenleri al, eski hayalet maçları temizle
+        return list.filter(m => m.status === 'open' || (m.status === 'finished' && Date.now() - (m.finishedAt || 0) < 300000));
       } catch(e) { return []; }
     }
 
@@ -1596,7 +1598,7 @@
             ${isMy ? `
               <button class="btn-card-cancel" onclick="cancelMatch('${m.id}')">Cancel Match</button>
             ` : `
-              <button class="btn-card-join" onclick="openJoinMatchModal('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
+              <button class="btn-card-join" onclick="handleJoinMatchClick('${m.id}')">Join<br>(${m.value.toLocaleString()})</button>
             `}
           </div>
         </div>`;
@@ -1618,12 +1620,48 @@
       showToast("Match cancelled.", "info");
     }
 
-    // ===== JOIN MATCH MODAL & INLINE ERROR =====
-    function openJoinMatchModal(matchId, errorMessage = '') {
+    // ===== AKILLI FAST SELECT + TOLERANS MODAL SİSTEMİ =====
+    function handleJoinMatchClick(matchId) {
       if (!currentUser) return openAuthModal();
       const m = matches.find(x => x.id === matchId);
       if (!m) return showToast("Match not found!", "error");
       if (!fullInventory.length) return showToast("Your inventory is empty!", "error");
+
+      const targetVal = m.value;
+      const minAllowed = targetVal - 20000;
+      const maxAllowed = targetVal + 150000;
+
+      // 1. Fast Select: Envanterde tam değeri sağlayan tek eşya var mı?
+      let exactMatch = fullInventory.find(i => (i.value || 0) >= minAllowed && (i.value || 0) <= maxAllowed);
+      if (exactMatch) {
+        // Otomatik seç ve direkt maça gir!
+        executeJoinMatch(m.id, [exactMatch]);
+        return;
+      }
+
+      // 2. Kombinasyonla aralık tutturulabiliyor mu ara
+      let chosenItems = [];
+      let currentSum = 0;
+      let sorted = [...fullInventory].sort((a,b) => (b.value || 0) - (a.value || 0));
+      for (let item of sorted) {
+        if (currentSum < minAllowed) {
+          chosenItems.push(item);
+          currentSum += (item.value || 0);
+        }
+      }
+
+      if (currentSum >= minAllowed && currentSum <= maxAllowed) {
+        executeJoinMatch(m.id, chosenItems);
+        return;
+      }
+
+      // 3. Aralık tutmuyorsa modalı aç ve hatayı O SEKMEDE göster
+      openJoinMatchModal(matchId, `⚠️ No matching items found for range (${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}). Please select manually.`);
+    }
+
+    function openJoinMatchModal(matchId, errorMessage = '') {
+      const m = matches.find(x => x.id === matchId);
+      if (!m) return;
 
       pendingJoinMatchId = matchId;
       joinSelectedIds = new Set();
@@ -1674,9 +1712,11 @@
       });
       const m = matches.find(x => x.id === pendingJoinMatchId);
       const target = m ? m.value : 0;
+      const minAllowed = target - 20000;
+      const maxAllowed = target + 150000;
       const display = document.getElementById('joinSelectedValDisplay');
       display.innerText = `Your Selected: ${total.toLocaleString()} / ${target.toLocaleString()} Value`;
-      display.style.color = (total >= target - 20000 && total <= target + 150000) ? '#22c55e' : '#ef4444';
+      display.style.color = (total >= minAllowed && total <= maxAllowed) ? '#22c55e' : '#ef4444';
     }
 
     function closeJoinMatchModal() {
@@ -1713,12 +1753,19 @@
         return;
       }
 
+      executeJoinMatch(m.id, chosenItems);
+      closeJoinMatchModal();
+    }
+
+    function executeJoinMatch(matchId, chosenItems) {
+      const m = matches.find(x => x.id === matchId);
+      if (!m) return;
+
       const chosenIds = new Set(chosenItems.map(i => i.id));
       fullInventory = fullInventory.filter(i => !chosenIds.has(i.id));
       filteredInventory = [...fullInventory];
       renderInventory();
 
-      // Save match locally to My Matches as well
       let userSaved = getMySavedMatches();
       let joinedMatchCopy = {
         ...m,
@@ -1737,7 +1784,6 @@
         }));
       }
 
-      closeJoinMatchModal();
       showToast("Joined match! Rolling duel...", "success");
       renderMatches();
     }
@@ -1820,6 +1866,7 @@
         renderInventory();
 
         duel.status = 'finished';
+        duel.finishedAt = Date.now();
         duel.userWon = userWon;
         let userSaved = getMySavedMatches();
         userSaved = userSaved.filter(m => m.id !== duel.id);
