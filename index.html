@@ -1407,8 +1407,7 @@
         </svg>
       </div>
       <div class="result-title-bloxluck" id="resTitle">Winner!</div>
-      <div class="result-subtitle-bloxluck" id="resDesc">You Won This Game.</div>
-      <div class="result-val-bloxluck" id="resVal">+0 Value</div>
+      <div class="result-subtitle-bloxluck" id="resDesc" style="margin-bottom: 20px;">You Won This Game.</div>
       <button class="btn-result-continue" onclick="closeResultPopup()">Continue</button>
     </div>
   </div>
@@ -1722,9 +1721,19 @@
           cancelledSet = new Set(JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]'));
         } catch(e) {}
 
-        // SADECE bitmis (finished) veya oynanmis (opponent atanmis) maclar yerel gecmiste tutulabilir!
-        // Acik maclar ASLA yerel hafizadan yuklenemez, yalnizca canli sunucudan (matches) gelir!
-        list = list.filter(m => m && (m.status === 'finished' || m.opponent) && !cancelledSet.has(m.id));
+        const TWENTY_MINS_MS = 20 * 60 * 1000;
+        const now = Date.now();
+        const initialCount = list.length;
+
+        // KURAL: 20 dakika sonra bitmis maclar otomatik silinir!
+        list = list.filter(m => {
+          if (!m || cancelledSet.has(m.id)) return false;
+          if (m.status === 'finished' || m.opponent) {
+            const fTime = m.finishedAt || now;
+            if (now - fTime >= TWENTY_MINS_MS) return false;
+          }
+          return true;
+        });
 
         if (currentUser && currentUser.name) {
           const myName = String(currentUser.name).toLowerCase().trim();
@@ -1733,6 +1742,10 @@
             const opponent = String(m.opponent?.name || '').toLowerCase().trim();
             return (creator === myName || opponent === myName);
           });
+        }
+
+        if (list.length !== initialCount) {
+          localStorage.setItem(getMyMatchesStorageKey(), JSON.stringify(list));
         }
         return list;
       } catch(e) { return []; }
@@ -2168,6 +2181,10 @@
             } else {
               matches.unshift(duel);
             }
+            // Bloxluck gibi akista fazla bitmis mac birikince en eskilerini otomatik dusur
+            const openM = matches.filter(m => m.status === 'open');
+            const finM = matches.filter(m => m.status === 'finished' || m.opponent).slice(0, 8);
+            matches = [...openM, ...finM];
 
             const myName = (currentUser?.name || "").toLowerCase().trim();
             const isCreator = myName && (String(duel.creatorName || "").toLowerCase().trim() === myName);
@@ -2646,21 +2663,26 @@
       let list;
       if (myMatchesOnly) {
         // My Matches:
-        // 1. Canli sunucuda benim kurdugum ve su an acik olan maclar:
+        // 1. Canli sunucuda benim kurdugum ve su an acik olan maclarim:
         const myLiveOpenMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
-        // 2. Oynanmis/bitmis mac gecmisim:
+        // 2. 20 dakika boyunca saklanan bitmis mac gecmisim:
         list = [...myLiveOpenMatches, ...userSaved];
       } else {
-        // All Matches:
-        // SADECE canli sunucuda acik olan ve kurucusu baskalari olan maclar:
-        list = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() !== myName);
+        // All Matches (Görsel ve Video Bloxluck Birebir):
+        // 1. Baskalarinin kurdugu acik maclar:
+        const openMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() !== myName);
+        // 2. Canli akista son oynanmis bitmis maclar (Bloxluck gibi son 6-8 mac gosterilir, eskiler otomatik silinir/duser):
+        const recentFinished = matches
+          .filter(m => (m.status === 'finished') || Boolean(m.opponent))
+          .slice(0, 8);
+        list = [...openMatches, ...recentFinished];
       }
 
       const hasFinishedInMyMatches = myMatchesOnly && list.some(m => m.status === 'finished' || m.opponent);
       const myMatchesToolbarHtml = hasFinishedInMyMatches ? `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 2px;">
           <span style="font-size:0.8rem; font-weight:800; color:#94a3b8;">My Duels</span>
-          <button onclick="clearAllFinishedMatches()" style="background:#1e293b; border:1px solid #334155; color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:6px; padding:4px 10px; cursor:pointer;">🗑️ Clear Finished</button>
+          
         </div>` : '';
 
       if (!list.length) {
@@ -2747,7 +2769,7 @@
             <!-- En Sağdaki Büyük Kazanan Coin Çipi ve Kaldır Butonu -->
             <div class="history-winner-col" style="display:flex; align-items:center; gap:8px;">
               ${winnerChipHtml}
-              <button onclick="dismissHistoryMatch('${m.id}')" style="background:transparent; border:none; color:#475569; font-size:0.9rem; cursor:pointer; padding:4px; border-radius:4px; line-height:1;" title="Remove match">✕</button>
+              
             </div>
           </div>`;
         }
@@ -3411,8 +3433,6 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       const svgLose = document.getElementById('resSvgLose');
       const title = document.getElementById('resTitle');
       const desc = document.getElementById('resDesc');
-      const valEl = document.getElementById('resVal');
-      const absVal = Math.abs(parseCleanNumber(val));
 
       if (isWin) {
         badge.className = 'result-icon-badge badge-win';
@@ -3420,16 +3440,12 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         svgLose.style.display = 'none';
         title.innerText = 'Winner!';
         desc.innerText = 'You Won This Game.';
-        valEl.innerText = `+${absVal.toLocaleString()} Value`;
-        valEl.className = 'result-val-bloxluck val-win';
       } else {
         badge.className = 'result-icon-badge badge-lose';
         svgWin.style.display = 'none';
         svgLose.style.display = 'block';
         title.innerText = 'Loser :(';
         desc.innerText = 'You lost This Game.';
-        valEl.innerText = `-${absVal.toLocaleString()} Value`;
-        valEl.className = 'result-val-bloxluck val-lose';
       }
 
       document.getElementById('resultPopup').style.display = 'flex';
