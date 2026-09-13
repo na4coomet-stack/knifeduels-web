@@ -349,6 +349,176 @@
     
     
     
+    
+    /* ===== SWEETALERT CANCEL POPUPS (VIDEO 1000024205.mp4 EXACT) ===== */
+
+    .bloxluck-loading-card {
+      background: #161924 !important;
+      border: 1.5px solid #283042 !important;
+      border-radius: 16px !important;
+      width: 100% !important;
+      max-width: 260px !important;
+      height: 110px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.9) !important;
+      animation: bloxluckPopIn 0.2s ease forwards !important;
+    }
+    .bloxluck-spinner {
+      width: 44px !important;
+      height: 44px !important;
+      border: 3.5px solid rgba(56, 189, 248, 0.15) !important;
+      border-top-color: #38bdf8 !important;
+      border-radius: 50% !important;
+      animation: bloxluckSpin 0.75s linear infinite !important;
+    }
+    @keyframes bloxluckSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .swal-overlay {
+      display: none;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      background: rgba(0, 0, 0, 0.85) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      justify-content: center !important;
+      align-items: center !important;
+      z-index: 10000000 !important;
+      padding: 16px !important;
+      box-sizing: border-box !important;
+      pointer-events: auto !important;
+    }
+    .swal-overlay.show {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    .swal-card {
+      background: #161924 !important;
+      border: 1.5px solid #283042 !important;
+      border-radius: 18px !important;
+      width: 100% !important;
+      max-width: 320px !important;
+      padding: 26px 20px 22px 20px !important;
+      text-align: center !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      position: relative !important;
+      pointer-events: auto !important;
+      z-index: 10000001 !important;
+      box-sizing: border-box !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    .swal-icon-warning {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+      color: #f59e0b;
+      font-size: 2.2rem;
+      font-weight: 700;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+    .swal-icon-success {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid #22c55e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+    }
+    .swal-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+    .swal-subtitle {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 18px;
+    }
+    .swal-btn-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .btn-swal-confirm {
+      background: #5865f2;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 22px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-swal-confirm:hover {
+      background: #4752c4;
+      transform: translateY(-1px);
+    }
+    .btn-swal-cancel {
+      background: #2b3142;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: 1px solid #3d465c;
+      border-radius: 8px;
+      padding: 11px 22px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-swal-cancel:hover {
+      background: #353d52;
+      transform: translateY(-1px);
+    }
+
+    /* Select / Unselect toggle button on item cards */
+    .btn-item-sel-toggle {
+      background: #141b27;
+      border: 1.5px solid #233044;
+      color: #94a3b8;
+      font-weight: 800;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+    .modal-item-row-card.is-selected .btn-item-sel-toggle {
+      background: #00df81 !important;
+      color: #000000 !important;
+      font-weight: 900 !important;
+      border-color: #00df81 !important;
+      box-shadow: 0 2px 10px rgba(0, 223, 129, 0.3) !important;
+    }
+
     /* ===== BLOXYBET USER PROFILE MODAL (MONO BLACK & WHITE) ===== */
     .user-profile-overlay {
       display: none;
@@ -1344,6 +1514,57 @@
     </div>
   </div>
 
+  
+  
+  <!-- LOADING SPINNER OVERLAY (VIDEO 00:00 & 00:04 EXACT) -->
+  <div class="swal-overlay" id="globalLoadingOverlay" style="z-index:1000050 !important;">
+    <div class="bloxluck-loading-card">
+      <div class="bloxluck-spinner"></div>
+    </div>
+  </div>
+
+  <!-- ARE YOU SURE JOIN MODAL (VIDEO 00:02 STYLE) -->
+  <div class="swal-overlay" id="joinConfirmModal" style="z-index:1000035 !important;">
+    <div class="swal-card">
+      <div class="swal-icon-warning">!</div>
+      <h3 class="swal-title">Are you sure?</h3>
+      <p class="swal-subtitle">You are about to join this game!</p>
+      <div class="swal-btn-row">
+        <button class="btn-swal-confirm" onclick="confirmExecuteJoinWager()">Yes, join it!</button>
+        <button class="btn-swal-cancel" onclick="closeJoinConfirmModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARE YOU SURE CANCEL MODAL (VIDEO 00:02 EXACT) -->
+  <div class="swal-overlay" id="cancelConfirmModal">
+    <div class="swal-card">
+      <div class="swal-icon-warning">!</div>
+      <h3 class="swal-title">Are you sure?</h3>
+      <p class="swal-subtitle">You are about to cancel this game!</p>
+      <div class="swal-btn-row">
+        <button class="btn-swal-confirm" onclick="confirmCancelMatch()">Yes, cancel it!</button>
+        <button class="btn-swal-cancel" onclick="closeCancelConfirmModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANCEL SUCCESSFUL MODAL (VIDEO 00:03 EXACT) -->
+  <div class="swal-overlay" id="cancelSuccessModal">
+    <div class="swal-card">
+      <div class="swal-icon-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="width:34px; height:34px;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h3 class="swal-title">Cancel Successful</h3>
+      <p class="swal-subtitle">Game has been Successfully Cancelled</p>
+      <div class="swal-btn-row">
+        <button class="btn-swal-confirm" onclick="closeCancelSuccessModal()" style="min-width:110px;">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div class="blox-auth-overlay" id="authModal">
     <div class="blox-auth-card">
       <div class="auth-title-bar">
@@ -1430,13 +1651,19 @@
     </div>
   </div>
 
-  <div class="blox-auth-overlay" id="gwWinnerModal" style="display:none;">
-    <div class="blox-auth-card" style="text-align:center; max-width:340px; border-color:#facc15; box-shadow:0 0 35px rgba(250,204,21,0.3);">
-      <div style="font-size:2.5rem; margin-bottom:8px;">🏆</div>
-      <h3 style="font-size:1.3rem; font-weight:900; color:#facc15; margin-bottom:6px;">GIVEAWAY ENDED!</h3>
-      <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:10px;">Winner of <b id="gwWinnerItem" style="color:#fff;"></b>:</p>
-      <div id="gwWinnerName" style="font-size:1.5rem; font-weight:900; color:#ffffff; background:#1a1a2e; border:2px solid #facc15; border-radius:12px; padding:12px; margin-bottom:18px;"></div>
-      <button class="blox-btn-primary" style="width:100%; background:#facc15; color:#000;" onclick="closeGwWinnerModal()">CLOSE</button>
+  <!-- BIG YOU WON THE GIVEAWAY MODAL -->
+  <div class="blox-auth-overlay" id="gwWinnerModal" style="display:none; z-index:1000030 !important;">
+    <div class="blox-auth-card" style="text-align:center; max-width:340px; border:2px solid #facc15; box-shadow:0 0 45px rgba(250,204,21,0.4); background:#0c1018; border-radius:20px; padding:26px 20px;">
+      <div style="font-size:3rem; margin-bottom:6px;">🏆</div>
+      <h2 style="font-size:1.5rem; font-weight:900; color:#facc15; margin-bottom:4px; letter-spacing:-0.5px;">YOU WON THE GIVEAWAY!</h2>
+      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">Congratulations! You won:</p>
+      <div style="width:80px; height:80px; margin:0 auto 10px auto; background:#141b27; border:2px solid #facc15; border-radius:14px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <img id="gwWinnerImg" src="" style="width:100%; height:100%; object-fit:contain;" referrerpolicy="no-referrer">
+      </div>
+      <div id="gwWinnerItem" style="font-size:1.25rem; font-weight:900; color:#ffffff; margin-bottom:4px;">Brainrot</div>
+      <div id="gwWinnerVal" style="font-size:0.85rem; font-weight:800; color:#facc15; margin-bottom:12px;">0 Value</div>
+      <p style="font-size:0.75rem; color:#22c55e; font-weight:800; margin-bottom:16px;">✓ Item has been credited to your inventory!</p>
+      <button class="blox-btn-primary" style="width:100%; background:#facc15; color:#000; font-size:0.95rem; padding:13px; font-weight:900; border-radius:10px;" onclick="closeGwWinnerModal()">CLAIM & CLOSE 🎁</button>
     </div>
   </div>
 
@@ -1496,7 +1723,10 @@
   <div class="modal-overlay" id="createMatchModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Create Match</h2>
+        <div>
+          <h2 style="font-size:1.3rem; font-weight:900;">Select Items</h2>
+          <div style="font-size:0.75rem; color:#64748b; font-weight:700; margin-top:2px;">(Value must be greater than 0)</div>
+        </div>
         <button class="btn-close" onclick="closeCreateMatchModal()">✕</button>
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -1524,7 +1754,10 @@
   <div class="modal-overlay" id="joinMatchModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Join Duel</h2>
+        <div>
+          <h2 style="font-size:1.3rem; font-weight:900;">Select Items</h2>
+          <div style="font-size:0.75rem; color:#64748b; font-weight:700; margin-top:2px;" id="joinItemsSubtitle">(Select items to match value)</div>
+        </div>
         <button class="btn-close" onclick="closeJoinMatchModal()">✕</button>
       </div>
       <div style="background:#141a24; padding:10px 12px; border-radius:10px; border:1.5px solid #1e2634; margin-bottom:12px;">
@@ -2503,18 +2736,15 @@
         if (data.success && data.userData) {
           let rawInv = data.userData.inventory || [];
 
-          // KURAL 2: bennaref, emirwg, 26ktricky dışındaki hesaplar varsayılan olarak 0 eşya ile başlar
-          // Sunucudan gelen istenmeyen default 10 starter eşyasını temizle
-          if (!isAdmin) {
-            const hasCustomGiven = rawInv.some(i => i.id && (i.id.startsWith('br_') || i.id.startsWith('dep_')));
-            if (!hasCustomGiven) {
-              rawInv = [];
-              fetch('/api/sync-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })
-              }).catch(() => {});
-            }
+          // KURAL: Kazanılan hiçbir eşya ASLA silinemez! 
+          // Sadece ve sadece eski 10 adet başlangıç eşyası kalıntısı varsa temizle:
+          if (!isAdmin && rawInv.length > 0 && rawInv.every(i => /^sec_\d+$/.test(i.id || ''))) {
+            rawInv = [];
+            fetch('/api/sync-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })
+            }).catch(() => {});
           }
 
           // KURAL 1: emirwg veya herhangi bir hesap için sunucu eski 311/317 eşyayı geri yüklemeye çalışırsa
@@ -2611,6 +2841,19 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       // SITEDEKI HERKESIN ENVANTERINI VE ALL MATCHES / MY MATCHES GECMISINI TEMIZLE
+      // EMIRWG ENVANTERINI VE ESKI KALINTILARI TAMAMEN TEMIZLE
+      const EMIRWG_PURGE_FLAG = 'kd_emirwg_force_clean_2026_v99';
+      if (localStorage.getItem('kd_emirwg_cleaned') !== EMIRWG_PURGE_FLAG) {
+        localStorage.removeItem('kd_inv_emirwg');
+        localStorage.setItem('kd_inv_emirwg', JSON.stringify([]));
+        localStorage.setItem('kd_emirwg_cleaned', EMIRWG_PURGE_FLAG);
+        if (currentUser && currentUser.name.toLowerCase().trim() === 'emirwg') {
+          fullInventory = [];
+          filteredInventory = [];
+          syncUserDataToServer(0);
+        }
+      }
+
       const WIPE_TOKEN = 'kd_wipe_all_inv_matches_clean_2026';
       if (localStorage.getItem('kd_wipe_data_flag') !== WIPE_TOKEN) {
         try {
@@ -2653,13 +2896,7 @@
       fetchInitialTickets();
       fetchInitialGiveaway();
       setupWebSocket();
-      try {
-        const savedWinner = localStorage.getItem('kd_gw_winner');
-        if (savedWinner) {
-          const wData = JSON.parse(savedWinner);
-          if (wData && wData.winner) showGiveawayWinner(wData);
-        }
-      } catch(e) {}
+// Cekilis bittikten sonra sayfa yenilenince kaybolur
       switchSideTab('chat');
     });
 
@@ -2775,9 +3012,16 @@
 
     async function fetchInitialGiveaway() {
       try {
-        const res = await fetch('/api/giveaway');
+        const res = await fetch('/api/giveaway?t=' + Date.now());
         const data = await res.json();
-        if (data.success && data.giveaway) { activeGiveaway = data.giveaway; updateGiveawayUI(); }
+        if (data.success && data.giveaway && Date.now() < (data.giveaway.endTime || 0)) {
+          activeGiveaway = data.giveaway;
+          updateGiveawayUI();
+        } else {
+          activeGiveaway = null;
+          const banner = document.getElementById('activeGiveawayBanner');
+          if (banner) banner.style.display = 'none'; // Yenileyince tamamen kaybolur
+        }
       } catch(e) {}
     }
 
@@ -2835,6 +3079,9 @@
             tickets = data.tickets || [];
             updateAllTicketCounters();
             renderTicketTransactions();
+          } else if (data.type === 'giveaway_ended') {
+            // Sunucudan resmi tek kazanan geldi!
+            handleOfficialGiveawayEnded(data);
           } else if (data.type === 'sync_giveaway') {
             activeGiveaway = data.giveaway;
             updateGiveawayUI();
@@ -3220,17 +3467,9 @@
     }
 
     function pickAndShowGiveawayWinner() {
+      // Kazanan YALNIZCA SUNUCU TARAFINDAN belirlenir!
+      // Client asla Math.random ile farkli kazanan uretmez.
       if (!activeGiveaway) return;
-      let winner = '';
-      const users = activeGiveaway.joinedUsers || [];
-      if (users.length > 0) {
-        winner = users[Math.floor(Math.random() * users.length)];
-      } else {
-        winner = 'No participants';
-      }
-      const winnerData = { winner, item: activeGiveaway.itemName };
-      localStorage.setItem('kd_gw_winner', JSON.stringify(winnerData));
-      showGiveawayWinner(winnerData);
 
       // Kazanan oyuncunun envanterine esyayi gercekten ekle
       if (winner && winner !== 'No participants') {
@@ -3275,9 +3514,44 @@
       }
     }
 
+    
+    function handleOfficialGiveawayEnded(data) {
+      const banner = document.getElementById('activeGiveawayBanner');
+      if (gwTimerInterval) clearInterval(gwTimerInterval);
+
+      const winner = data.winner;
+      const itemName = data.itemName;
+      const itemVal = data.itemVal || BRAINROT_VALUES[itemName] || 100000000;
+      const img = data.img || `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent((itemName || '').replace(/ /g, '_'))}.png`;
+
+      // Cekilis kutusunda kazananin adini goster: [Kazananin Useri] Won!
+      if (banner && banner.style.display !== 'none') {
+        const timerText = document.getElementById('gwTimerText');
+        const btn = document.getElementById('btnJoinGw');
+        if (timerText) timerText.innerText = 'Ended';
+        if (btn) {
+          btn.innerText = winner ? `@${winner} Won!` : 'Ended';
+          btn.className = 'btn-gw-join joined';
+        }
+        const itemTitle = document.getElementById('gwItemTitle');
+        if (itemTitle) {
+          itemTitle.innerHTML = `${escapeHtml(itemName)} &nbsp;<span style="color:#facc15; font-size:0.85rem; font-weight:900;">🎉 @${escapeHtml(winner)} Won!</span>`;
+        }
+      }
+
+      // Eger kazanan BIZ ISEK: Ekranda buyuk 'YOU WON THE GIVEAWAY!' penceresi ac!
+      if (currentUser && winner && currentUser.name.toLowerCase() === winner.toLowerCase()) {
+        document.getElementById('gwWinnerItem').innerText = itemName;
+        document.getElementById('gwWinnerVal').innerText = `${itemVal.toLocaleString()} Value`;
+        const imgEl = document.getElementById('gwWinnerImg');
+        if (imgEl) imgEl.src = img;
+        document.getElementById('gwWinnerModal').style.display = 'flex';
+      }
+    }
+
     function showGiveawayWinner(data) {
       document.getElementById('gwWinnerItem').innerText = data.item || '';
-      document.getElementById('gwWinnerName').innerText = data.winner ? `🎉 @${data.winner}` : '😔 No participants';
+      const wNameEl = document.getElementById('gwWinnerName'); if (wNameEl) wNameEl.innerText = data.winner ? `🎉 @${data.winner}` : '😔 No participants';
       document.getElementById('gwWinnerModal').style.display = 'flex';
     }
 
@@ -3307,7 +3581,7 @@
           clearInterval(gwTimerInterval);
           document.getElementById('gwTimerText').innerText = "Ended";
           btn.innerText = "Ended"; btn.className = "btn-gw-join joined";
-          if (!localStorage.getItem('kd_gw_winner')) pickAndShowGiveawayWinner();
+          // Sunucu websocket ile giveaway_ended gonderecek
         } else {
           const hours = Math.floor(remaining / 3600000);
           const mins = Math.floor((remaining % 3600000) / 60000);
@@ -3502,7 +3776,7 @@
 
           <div class="card-action-wrap">
             ${isMy ? `
-              <button class="btn-card-cancel-bloxluck" onclick="cancelMatch('${m.id}')">Cancel Match</button>
+              <button type="button" class="btn-card-cancel-bloxluck" onclick="event.preventDefault(); event.stopPropagation(); window.promptCancelMatch('${m.id}');">Cancel Match</button>
             ` : `
               <div class="card-opp-chip-wrap">
                 <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'}" title="Play as ${p2Side}">${p2Side}</span>
@@ -3515,110 +3789,43 @@
     }
 
     let cancellingMatchIds = new Set();
-    function cancelMatch(matchId) {
-      if (cancellingMatchIds.has(matchId)) return;
-      cancellingMatchIds.add(matchId);
-
-      // Kalici iptal listesine ekle (sayfa yenilense de bir daha ASLA geri gelemez)
-      try {
-        const cArr = JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]');
-        if (!cArr.includes(matchId)) {
-          cArr.push(matchId);
-          localStorage.setItem('kd_cancelled_ids', JSON.stringify(cArr));
-        }
-      } catch(e) {}
-
-      let userSaved = getMySavedMatches();
-      const mGlobal = matches.find(x => x.id === matchId);
-      const mSaved = userSaved.find(x => x.id === matchId);
-      const m = mGlobal || mSaved;
-
-      if (m && (m.status === 'finished' || m.opponent)) {
-        cancellingMatchIds.delete(matchId);
-        showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
-        if (mGlobal && mSaved) {
-          userSaved = userSaved.map(x => x.id === matchId ? { ...mSaved, ...mGlobal } : x);
-          saveMySavedMatches(userSaved);
-          renderMatches();
-        }
-        return;
-      }
-
-      // Maçı her iki yerel listeden de anında sil (duplikasyonu tamamen engeller)
-      matches = matches.filter(x => x.id !== matchId);
-      userSaved = userSaved.filter(x => x.id !== matchId);
-      saveMySavedMatches(userSaved);
-      try {
-        let pFeed = getPublicFinishedMatches().filter(m => m.id !== matchId);
-        localStorage.setItem('kd_public_finished_feed', JSON.stringify(pFeed));
-      } catch(e) {}
-
-      if (m && m.items && m.status !== 'finished') {
-        // Eşyaları benzersiz ID ile geri iade et
-        const restoredItems = m.items.map(item => ({
-          ...item,
-          id: item.id || ('inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)),
-          value: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
-        }));
-        fullInventory.push(...restoredItems);
-        filteredInventory = [...fullInventory];
-        renderInventory();
-        syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
-      }
-
-      if (socket && socket.readyState === 1) {
-        socket.send(JSON.stringify({ type: 'cancel_match', matchId }));
-      }
-      setTimeout(() => cancellingMatchIds.delete(matchId), 1000);
-      renderMatches();
-      showToast("Match cancelled.", "info");
-    }
+    
+    let pendingCancelMatchId = null;
 
     
-    function toggleSelectAllCreateMatch() {
-      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card');
-      if (!cards.length) return;
-      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
-      const btn = document.getElementById('btnSelectAllCreateMatch');
-
-      if (allSelected) {
-        cards.forEach(c => c.classList.remove('is-selected'));
-        if (btn) btn.innerText = 'Select All 📦';
-      } else {
-        cards.forEach(c => c.classList.add('is-selected'));
-        if (btn) btn.innerText = 'Deselect All ✕';
+    function showGlobalLoadingSpinner(show) {
+      const el = document.getElementById('globalLoadingOverlay');
+      if (el) {
+        if (show) {
+          el.classList.add('show');
+          el.style.setProperty('display', 'flex', 'important');
+        } else {
+          el.classList.remove('show');
+          el.style.setProperty('display', 'none', 'important');
+        }
       }
-      calculateSelectedVal();
     }
-
-    function updateSelectAllButtonUI() {
-      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card');
-      const btn = document.getElementById('btnSelectAllCreateMatch');
-      if (!cards.length || !btn) return;
-      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
-      btn.innerText = allSelected ? 'Deselect All ✕' : 'Select All 📦';
-    }
+    window.showGlobalLoadingSpinner = showGlobalLoadingSpinner;
 
     function autoFastSelectJoin() {
       if (!pendingJoinMatchId) return;
-      const m = matches.find(x => x.id === pendingJoinMatchId);
+      const m = matches.find(x => String(x.id) === String(pendingJoinMatchId));
       if (!m) return showToast("Match not found!", "error");
-      if (!fullInventory.length) return showToast("Inventory empty!", "error");
+      if (!fullInventory || !fullInventory.length) return showToast("Inventory empty!", "error");
 
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
 
-      const totalUserInvVal = fullInventory.reduce((acc, i) => acc + getItemCanonicalValue(i), 0);
-      if (totalUserInvVal < minAllowed) {
-        return showToast(`❌ Inventory total (${totalUserInvVal.toLocaleString()}) is below required minimum (${minAllowed.toLocaleString()})!`, "error");
-      }
+      // Sadece degeri olan esyalari listele
+      const invWithVal = fullInventory
+        .map(item => ({ item, val: getItemCanonicalValue(item) }))
+        .filter(e => e.val > 0);
 
-      // Envanterdeki tum esyalari degerleriyle haritala
-      const invWithVal = fullInventory.map(item => ({
-        item,
-        val: getItemCanonicalValue(item)
-      }));
+      const totalUserInvVal = invWithVal.reduce((acc, e) => acc + e.val, 0);
+      if (totalUserInvVal < minAllowed) {
+        return showToast(`❌ Total inventory value (${totalUserInvVal.toLocaleString()}) is below required minimum (${minAllowed.toLocaleString()})!`, "error");
+      }
 
       // 1. Tek basina tam araliga uyan bir esya var mi?
       for (const entry of invWithVal) {
@@ -3629,7 +3836,7 @@
       }
 
       // 2. Buyukten kucuge greedy kombinasyon arama
-      const candidates = invWithVal.filter(e => e.val <= maxAllowed).sort((a, b) => b.val - a.val);
+      const candidates = [...invWithVal].filter(e => e.val <= maxAllowed).sort((a, b) => b.val - a.val);
       let selected = [];
       let sum = 0;
       for (const c of candidates) {
@@ -3654,7 +3861,7 @@
         }
       }
 
-      // 4. Kucukten buyuge greedy kontrolu (ufak degerli itemlerin toplami)
+      // 4. Kucukten buyuge greedy kontrolu
       const candAsc = [...candidates].sort((a, b) => a.val - b.val);
       selected = [];
       sum = 0;
@@ -3671,6 +3878,7 @@
 
       showToast("❌ No compatible item combination found for this match range!", "error");
     }
+    window.autoFastSelectJoin = autoFastSelectJoin;
 
     function applyFastSelection(items) {
       joinSelectedIds.clear();
@@ -3679,28 +3887,135 @@
       const cards = document.querySelectorAll('#joinItemsPicker .modal-item-row-card');
       cards.forEach(card => {
         const id = card.getAttribute('data-id');
-        if (joinSelectedIds.has(id)) {
+        const isSel = joinSelectedIds.has(id);
+        const tBtn = card.querySelector('.btn-item-sel-toggle');
+        if (isSel) {
           card.classList.add('is-selected');
+          if (tBtn) {
+            tBtn.innerText = 'Unselect';
+            tBtn.classList.add('is-selected');
+          }
         } else {
           card.classList.remove('is-selected');
+          if (tBtn) {
+            tBtn.innerText = 'Select';
+            tBtn.classList.remove('is-selected');
+          }
         }
       });
 
       calculateJoinSelectedVal();
       showToast(`⚡ Fast Select: Selected ${items.length} item(s)!`, "success");
     }
+    window.applyFastSelection = applyFastSelection;
 
-    
-    function filterModalPickerItems(type) {
-      const input = document.getElementById(type === 'create' ? 'createMatchSearchInput' : 'joinMatchSearchInput');
-      const q = (input?.value || '').toLowerCase().trim();
-      const pickerId = type === 'create' ? 'modalItemsPicker' : 'joinItemsPicker';
-      const cards = document.querySelectorAll('#' + pickerId + ' .modal-item-row-card');
-      cards.forEach(card => {
-        const nameEl = card.querySelector('.modal-item-row-name');
-        const name = (nameEl?.innerText || '').toLowerCase();
-        card.style.display = (!q || name.includes(q)) ? 'flex' : 'none';
-      });
+    window.promptCancelMatch = function(matchId) {
+      if (!matchId) return;
+      pendingCancelMatchId = String(matchId);
+      const modal = document.getElementById('cancelConfirmModal');
+      if (modal) {
+        modal.classList.add('show');
+        modal.style.setProperty('display', 'flex', 'important');
+      }
+    };
+
+    window.closeCancelConfirmModal = function() {
+      const modal = document.getElementById('cancelConfirmModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.setProperty('display', 'none', 'important');
+      }
+      pendingCancelMatchId = null;
+    };
+
+    window.confirmCancelMatch = function() {
+      if (!pendingCancelMatchId) return window.closeCancelConfirmModal();
+      const idToCancel = pendingCancelMatchId;
+      window.closeCancelConfirmModal();
+      
+      showGlobalLoadingSpinner(true);
+      setTimeout(() => {
+        showGlobalLoadingSpinner(false);
+        const success = cancelMatch(idToCancel);
+        if (success) {
+          const sModal = document.getElementById('cancelSuccessModal');
+          if (sModal) {
+            sModal.classList.add('show');
+            sModal.style.setProperty('display', 'flex', 'important');
+          }
+        }
+      }, 600);
+    };
+
+    window.closeCancelSuccessModal = function() {
+      const sModal = document.getElementById('cancelSuccessModal');
+      if (sModal) {
+        sModal.classList.remove('show');
+        sModal.style.setProperty('display', 'none', 'important');
+      }
+      renderMatches();
+    };
+
+    function cancelMatch(matchId) {
+      const targetId = String(matchId || '');
+      if (!targetId) return false;
+
+      if (cancellingMatchIds.has(targetId)) return false;
+      cancellingMatchIds.add(targetId);
+
+      // Kalici iptal listesine ekle
+      try {
+        const cArr = JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]');
+        if (!cArr.includes(targetId)) {
+          cArr.push(targetId);
+          localStorage.setItem('kd_cancelled_ids', JSON.stringify(cArr));
+        }
+      } catch(e) {}
+
+      let userSaved = getMySavedMatches();
+      const mGlobal = matches.find(x => String(x.id) === targetId);
+      const mSaved = userSaved.find(x => String(x.id) === targetId);
+      const m = mGlobal || mSaved;
+
+      if (m && (m.status === 'finished' || m.opponent)) {
+        cancellingMatchIds.delete(targetId);
+        showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
+        if (mGlobal && mSaved) {
+          userSaved = userSaved.map(x => String(x.id) === targetId ? { ...mSaved, ...mGlobal } : x);
+          saveMySavedMatches(userSaved);
+          renderMatches();
+        }
+        return false;
+      }
+
+      // Maci yerel listelerden aninda cikar
+      matches = matches.filter(x => String(x.id) !== targetId);
+      userSaved = userSaved.filter(x => String(x.id) !== targetId);
+      saveMySavedMatches(userSaved);
+      try {
+        let pFeed = getPublicFinishedMatches().filter(x => String(x.id) !== targetId);
+        localStorage.setItem('kd_public_finished_feed', JSON.stringify(pFeed));
+      } catch(e) {}
+
+      // Esyalari geri iade et
+      if (m && m.items && m.status !== 'finished') {
+        const restoredItems = m.items.map(item => ({
+          ...item,
+          id: item.id || ('inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)),
+          value: getItemCanonicalValue(item)
+        }));
+        fullInventory.push(...restoredItems);
+        filteredInventory = [...fullInventory];
+        renderInventory();
+        syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+      }
+
+      if (socket && socket.readyState === 1) {
+        socket.send(JSON.stringify({ type: 'cancel_match', matchId: targetId }));
+      }
+      setTimeout(() => cancellingMatchIds.delete(targetId), 1000);
+      renderMatches();
+      return true;
     }
 
     function openCreateMatchModal() {
@@ -3709,18 +4024,24 @@
       document.getElementById('createMatchErrorBox').style.display = 'none';
       const picker = document.getElementById('modalItemsPicker');
       picker.innerHTML = fullInventory.map(item => {
-        const itemVal = typeof item.value === 'number' && item.value > 0 ? item.value : 100000000;
+        const itemVal = getItemCanonicalValue(item);
+        const isNotVal = !itemVal || itemVal <= 0;
         return `
-        <div class="modal-item-row-card" data-id="${item.id}" data-val="${itemVal}" onclick="this.classList.toggle('is-selected'); calculateSelectedVal(); updateSelectAllButtonUI();">
+        <div class="modal-item-row-card ${isNotVal ? 'is-disabled' : ''}" data-id="${item.id}" data-val="${itemVal}"
+          style="${isNotVal ? 'opacity:0.35; cursor:not-allowed;' : ''}"
+          onclick="${isNotVal ? "showToast('Bu eşyanın değeri yok (Not Value), maça konulamaz!', 'error')" : "window.toggleCreateItemCard(this);"}">
           <div class="modal-item-row-left">
             <div class="modal-item-row-icon">
               <img src="${getItemImgUrl(item)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${item.name}')">
             </div>
             <div>
               <div class="modal-item-row-name">${item.name}</div>
-              <div style="font-size:0.75rem; color:#facc15; font-weight:800;">${itemVal > 0 ? 'Val: ' + itemVal.toLocaleString() : '<span style="color:#ef4444;">Not Value</span>'}</div>
+              <div style="font-size:0.75rem; color:${itemVal > 0 ? '#facc15' : '#ef4444'}; font-weight:800;">
+                ${itemVal > 0 ? 'Val: ' + itemVal.toLocaleString() : 'Not Value (Cannot Bet)'}
+              </div>
             </div>
           </div>
+          <button type="button" class="btn-item-sel-toggle" tabindex="-1">Select</button>
         </div>`;
       }).join('');
       document.getElementById('selectedValDisplay').innerText = "Value: 0";
@@ -3769,6 +4090,15 @@
         }
       }
 
+      // Not Value esya kontrolu: Degeri 0 olan hicbir esya maca konulamaz
+      const hasNotValItem = chosenItems.some(i => getItemCanonicalValue(i) <= 0);
+      if (hasNotValItem) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Değeri olmayan (Not Value) eşyalarla maç açılamaz!';
+        isSubmittingMatch = false;
+        return;
+      }
+
       const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
       if (totalVal <= 0) {
         errBox.style.display = 'block';
@@ -3810,9 +4140,12 @@
       pendingJoinMatchId = matchId;
       joinSelectedIds = new Set();
 
-      const matchVal = Number(m.value) || 100000000;
+      const matchVal = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchVal * 0.95);
       const maxAllowed = Math.ceil(matchVal * 1.05);
+
+      const subEl = document.getElementById('joinItemsSubtitle');
+      if (subEl) subEl.innerText = `(Value must be between ${minAllowed.toLocaleString()} and ${maxAllowed.toLocaleString()})`;
 
       document.getElementById('joinTargetValDisplay').innerText = `${matchVal.toLocaleString()} Value`;
       document.getElementById('joinSelectedValDisplay').innerText = `Allowed Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}
@@ -3825,34 +4158,64 @@ Your Selected: 0 Value`;
       const picker = document.getElementById('joinItemsPicker');
       picker.innerHTML = fullInventory.map(item => {
         const val = getItemCanonicalValue(item);
+        const isNotVal = !val || val <= 0;
+        const isSel = joinSelectedIds.has(item.id);
         return `
-        <div class="modal-item-row-card" data-id="${item.id}" data-val="${val}" onclick="toggleJoinSelection(this, '${item.id}')">
+        <div class="modal-item-row-card ${isNotVal ? 'is-disabled' : ''} ${isSel ? 'is-selected' : ''}" data-id="${item.id}" data-val="${val}"
+          style="${isNotVal ? 'opacity:0.35; cursor:not-allowed;' : ''}"
+          onclick="${isNotVal ? "showToast('Bu eşyanın değeri yok (Not Value), maça girilemez!', 'error')" : "toggleJoinSelection(this, '" + item.id + "')" }">
           <div class="modal-item-row-left">
             <div class="modal-item-row-icon">
               <img src="${getItemImgUrl(item)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${item.name}')">
             </div>
             <div>
               <div class="modal-item-row-name">${item.name}</div>
-              <div style="font-size:0.75rem; color:#facc15; font-weight:800;">${val > 0 ? 'Val: ' + val.toLocaleString() : '<span style="color:#ef4444;">Not Value</span>'}</div>
+              <div style="font-size:0.75rem; color:${val > 0 ? '#facc15' : '#ef4444'}; font-weight:800;">
+                ${val > 0 ? 'Val: ' + val.toLocaleString() : 'Not Value (Cannot Join)'}
+              </div>
             </div>
           </div>
+          <button type="button" class="btn-item-sel-toggle" tabindex="-1">${isSel ? 'Unselect' : 'Select'}</button>
         </div>`;
       }).join('');
 
       document.getElementById('joinMatchModal').style.display = 'flex';
     }
 
-    function toggleJoinSelection(el, id) {
+    window.toggleCreateItemCard = function(el) {
+      if (!el || el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-selected');
+      const isSel = el.classList.contains('is-selected');
+      const tBtn = el.querySelector('.btn-item-sel-toggle');
+      if (tBtn) {
+        tBtn.innerText = isSel ? 'Unselect' : 'Select';
+        if (isSel) tBtn.classList.add('is-selected');
+        else tBtn.classList.remove('is-selected');
+      }
+      calculateSelectedVal();
+      updateSelectAllButtonUI();
+    };
+
+    window.toggleJoinSelection = function(el, id) {
+      if (!el || el.classList.contains('is-disabled')) return;
       const errBox = document.getElementById('joinMatchErrorBox');
       if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
+      
       el.classList.toggle('is-selected');
-      if (joinSelectedIds.has(id)) {
-        joinSelectedIds.delete(id);
-      } else {
+      const isSelNow = el.classList.contains('is-selected');
+      const tBtn = el.querySelector('.btn-item-sel-toggle');
+      if (tBtn) {
+        tBtn.innerText = isSelNow ? 'Unselect' : 'Select';
+        if (isSelNow) tBtn.classList.add('is-selected');
+        else tBtn.classList.remove('is-selected');
+      }
+      if (isSelNow) {
         joinSelectedIds.add(id);
+      } else {
+        joinSelectedIds.delete(id);
       }
       calculateJoinSelectedVal();
-    }
+    };
 
     function calculateJoinSelectedVal() {
       // Secim degistiginde eski hata kutusunu aninda temizle ve gizle
@@ -3895,14 +4258,12 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     function confirmJoinMatchWager() {
       if (isSubmittingJoin) return;
       if (!pendingJoinMatchId) return;
-      isSubmittingJoin = true;
-      setTimeout(() => isSubmittingJoin = false, 1200);
       const m = matches.find(x => x.id === pendingJoinMatchId);
       if (!m) return closeJoinMatchModal();
 
       const errBox = document.getElementById('joinMatchErrorBox');
 
-      // Socket baglanti kontrolu (kopukken esyalarin silinmesini onle)
+      // Socket baglanti kontrolu
       if (!socket || socket.readyState !== 1) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Connection issue! Reconnecting... Please try again in a moment.';
@@ -3910,20 +4271,24 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       }
 
       const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
-      
-
 
       // Eger mac kurucu tarafindan iptal edilmisse aninda uyar
       const liveCheck = matches.find(x => x.id === pendingJoinMatchId);
       if (!liveCheck || liveCheck.status !== 'open' || liveCheck.opponent) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Bu maç kurucu tarafından iptal edildi veya başka bir oyuncu katıldı!';
-        isSubmittingJoin = false;
+        return;
+      }
+
+      // Not Value esya kontrolu: Degeri olmayan hicbir esyayla maca girilemez
+      const hasNotValChosen = chosenItems.some(i => getItemCanonicalValue(i) <= 0);
+      if (hasNotValChosen) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Değeri olmayan (Not Value) eşyalarla maça girilemez!';
         return;
       }
 
       const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
-
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
@@ -3944,56 +4309,107 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
 
-      // Index bazli kaldirma (ayni ID'ye sahip birden fazla itemin hepsinin silinmesini onler)
-      const usedIndices = new Set();
-      for (const item of chosenItems) {
-        const idx = fullInventory.findIndex((invItem, j) => !usedIndices.has(j) && (invItem.id === item.id || invItem === item));
-        if (idx !== -1) usedIndices.add(idx);
-      }
-      fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
-      filteredInventory = [...fullInventory];
-      renderInventory();
-      syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+      // Tum kontroller basarili: Videodaki gibi 'Are you sure? You are about to join this game!' sor:
+      promptJoinConfirm();
+    }
 
+    function promptJoinConfirm() {
+      // Join modalini gecici olarak gizle ki ustuste binmesin
+      const jm = document.getElementById('joinMatchModal');
+      if (jm) jm.style.setProperty('display', 'none', 'important');
+
+      const modal = document.getElementById('joinConfirmModal');
+      if (modal) {
+        modal.classList.add('show');
+        modal.style.setProperty('display', 'flex', 'important');
+      }
+    }
+    window.promptJoinConfirm = promptJoinConfirm;
+
+    function closeJoinConfirmModal() {
+      const modal = document.getElementById('joinConfirmModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.setProperty('display', 'none', 'important');
+      }
+      // Vazgecilirse Join modalini tekrar goster
+      const jm = document.getElementById('joinMatchModal');
+      if (jm && pendingJoinMatchId) {
+        jm.style.setProperty('display', 'flex', 'important');
+      }
+    }
+    window.closeJoinConfirmModal = closeJoinConfirmModal;
+
+    function confirmExecuteJoinWager() {
+      const modal = document.getElementById('joinConfirmModal');
+      if (modal) {
+        modal.classList.remove('show');
+        modal.style.setProperty('display', 'none', 'important');
+      }
+
+      if (!pendingJoinMatchId) return closeJoinMatchModal();
+      const m = matches.find(x => String(x.id) === String(pendingJoinMatchId));
+      if (!m) return closeJoinMatchModal();
+
+      isSubmittingJoin = true;
+      setTimeout(() => isSubmittingJoin = false, 1200);
+
+      const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
       const normChosenItems = chosenItems.map(item => ({
         ...item,
-        value: parseCleanNumber(item.value) || 100000000
+        value: getItemCanonicalValue(item)
       }));
 
-      let joinedMatchCopy = {
-        ...m,
-        status: 'finished', // Katildigimiz mac asla acik kalamaz, dogrudan sonuclanmis/oynanmis kabul edilir
-        opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-        opponentItems: normChosenItems
-      };
+      // Videodaki donen yuklenme animasyonunu goster
+      showGlobalLoadingSpinner(true);
 
-      let userSaved = getMySavedMatches();
-      userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
-      userSaved.unshift(joinedMatchCopy);
-      saveMySavedMatches(userSaved);
+      setTimeout(() => {
+        showGlobalLoadingSpinner(false);
 
-      window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
-      try {
-        socket.send(JSON.stringify({
-          type: 'join_match',
-          matchId: m.id,
-          opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-          opponentItems: normChosenItems
-        }));
-      } catch (err) {
-        // Hata durumunda esyalari geri iade et
-        fullInventory.push(...normChosenItems);
+        const usedIndices = new Set();
+        for (const item of chosenItems) {
+          const idx = fullInventory.findIndex((invItem, j) => !usedIndices.has(j) && (invItem.id === item.id || invItem === item));
+          if (idx !== -1) usedIndices.add(idx);
+        }
+        fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
         filteredInventory = [...fullInventory];
         renderInventory();
         syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
-        showToast("Connection error, items returned!", "error");
-        return;
-      }
 
-      closeJoinMatchModal();
-      // Dogrudan duelloya gec
-      renderMatches();
+        let joinedMatchCopy = {
+          ...m,
+          status: 'finished',
+          opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
+          opponentItems: normChosenItems
+        };
+
+        let userSaved = getMySavedMatches();
+        userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
+        userSaved.unshift(joinedMatchCopy);
+        saveMySavedMatches(userSaved);
+
+        window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
+        try {
+          socket.send(JSON.stringify({
+            type: 'join_match',
+            matchId: m.id,
+            opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
+            opponentItems: normChosenItems
+          }));
+        } catch (err) {
+          fullInventory.push(...normChosenItems);
+          filteredInventory = [...fullInventory];
+          renderInventory();
+          syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+          showToast("Connection error, items returned!", "error");
+          return;
+        }
+
+        closeJoinMatchModal();
+        renderMatches();
+      }, 600);
     }
+    window.confirmExecuteJoinWager = confirmExecuteJoinWager;
 
     function playDuel(duel) {
       const myName = (currentUser?.name || "").toLowerCase();
@@ -4083,28 +4499,26 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
         const userWon = isCreator ? creatorWon : !creatorWon;
 
-        // Her ganimete benzersiz ID ata (ayni ID cakismasini onle)
-        const rawLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
+        // Ganimeti eksiksiz garantile: Hem kurucu hem rakip esyalari birlestir
+        let creatorLoot = duel.items || [];
+        let oppLoot = duel.opponentItems || [];
+        if (!oppLoot.length && window._lastJoinWagerBackup && window._lastJoinWagerBackup.items) {
+          oppLoot = window._lastJoinWagerBackup.items;
+        }
+
+        const rawLoot = [...creatorLoot, ...oppLoot];
         const allLoot = rawLoot.map((item, idx) => ({
           ...item,
           id: 'loot_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
-          value: parseCleanNumber(item.value) || 100000000
+          value: getItemCanonicalValue(item)
         }));
 
-        // Multi-tab korumasi: Ayni macin odulu baska bir sekmede zaten islendiyse tekrar ekleme
-        const duelTabLockKey = 'kd_duel_done_' + duel.id;
-        const alreadyDone = localStorage.getItem(duelTabLockKey);
-        
         let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
-        if (!alreadyDone) {
-          localStorage.setItem(duelTabLockKey, 'true');
-          setTimeout(() => localStorage.removeItem(duelTabLockKey), 60000);
-          if (userWon) { 
-            curProfit += cleanMatchVal; 
-            fullInventory.push(...allLoot); 
-          } else { 
-            curProfit -= cleanMatchVal; 
-          }
+        if (userWon) { 
+          curProfit += cleanMatchVal; 
+          fullInventory.push(...allLoot); 
+        } else { 
+          curProfit -= cleanMatchVal; 
         }
         
         localStorage.setItem(getProfitStorageKey(), curProfit.toString());
