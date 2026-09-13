@@ -351,6 +351,33 @@
     
     
     /* ===== SWEETALERT CANCEL POPUPS (VIDEO 1000024205.mp4 EXACT) ===== */
+
+    .bloxluck-loading-card {
+      background: #161924 !important;
+      border: 1.5px solid #283042 !important;
+      border-radius: 16px !important;
+      width: 100% !important;
+      max-width: 260px !important;
+      height: 110px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.9) !important;
+      animation: bloxluckPopIn 0.2s ease forwards !important;
+    }
+    .bloxluck-spinner {
+      width: 44px !important;
+      height: 44px !important;
+      border: 3.5px solid rgba(56, 189, 248, 0.15) !important;
+      border-top-color: #38bdf8 !important;
+      border-radius: 50% !important;
+      animation: bloxluckSpin 0.75s linear infinite !important;
+    }
+    @keyframes bloxluckSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .swal-overlay {
       display: none;
       position: fixed !important;
@@ -1479,6 +1506,27 @@
   </div>
 
   
+  
+  <!-- LOADING SPINNER OVERLAY (VIDEO 00:00 & 00:04 EXACT) -->
+  <div class="swal-overlay" id="globalLoadingOverlay" style="z-index:1000050 !important;">
+    <div class="bloxluck-loading-card">
+      <div class="bloxluck-spinner"></div>
+    </div>
+  </div>
+
+  <!-- ARE YOU SURE JOIN MODAL (VIDEO 00:02 STYLE) -->
+  <div class="swal-overlay" id="joinConfirmModal" style="z-index:1000035 !important;">
+    <div class="swal-card">
+      <div class="swal-icon-warning">!</div>
+      <h3 class="swal-title">Are you sure?</h3>
+      <p class="swal-subtitle">You are about to join this game!</p>
+      <div class="swal-btn-row">
+        <button class="btn-swal-confirm" onclick="confirmExecuteJoinWager()">Yes, join it!</button>
+        <button class="btn-swal-cancel" onclick="closeJoinConfirmModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ARE YOU SURE CANCEL MODAL (VIDEO 00:02 EXACT) -->
   <div class="swal-overlay" id="cancelConfirmModal">
     <div class="swal-card">
@@ -3757,13 +3805,18 @@
       const idToCancel = pendingCancelMatchId;
       window.closeCancelConfirmModal();
       
-      const success = cancelMatch(idToCancel);
-      if (success) {
-        const sModal = document.getElementById('cancelSuccessModal');
-        if (sModal) {
-          sModal.style.setProperty('display', 'flex', 'important');
+      // Videodaki gibi once yuklenme doner
+      showGlobalLoadingSpinner(true);
+      setTimeout(() => {
+        showGlobalLoadingSpinner(false);
+        const success = cancelMatch(idToCancel);
+        if (success) {
+          const sModal = document.getElementById('cancelSuccessModal');
+          if (sModal) {
+            sModal.style.setProperty('display', 'flex', 'important');
+          }
         }
-      }
+      }, 650);
     };
 
     window.closeCancelSuccessModal = function() {
@@ -4076,14 +4129,12 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     function confirmJoinMatchWager() {
       if (isSubmittingJoin) return;
       if (!pendingJoinMatchId) return;
-      isSubmittingJoin = true;
-      setTimeout(() => isSubmittingJoin = false, 1200);
       const m = matches.find(x => x.id === pendingJoinMatchId);
       if (!m) return closeJoinMatchModal();
 
       const errBox = document.getElementById('joinMatchErrorBox');
 
-      // Socket baglanti kontrolu (kopukken esyalarin silinmesini onle)
+      // Socket baglanti kontrolu
       if (!socket || socket.readyState !== 1) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Connection issue! Reconnecting... Please try again in a moment.';
@@ -4091,15 +4142,12 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       }
 
       const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
-      
-
 
       // Eger mac kurucu tarafindan iptal edilmisse aninda uyar
       const liveCheck = matches.find(x => x.id === pendingJoinMatchId);
       if (!liveCheck || liveCheck.status !== 'open' || liveCheck.opponent) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Bu maç kurucu tarafından iptal edildi veya başka bir oyuncu katıldı!';
-        isSubmittingJoin = false;
         return;
       }
 
@@ -4108,12 +4156,10 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       if (hasNotValChosen) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Değeri olmayan (Not Value) eşyalarla maça girilemez!';
-        isSubmittingJoin = false;
         return;
       }
 
       const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
-
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
@@ -4134,55 +4180,88 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
 
-      // Index bazli kaldirma (ayni ID'ye sahip birden fazla itemin hepsinin silinmesini onler)
-      const usedIndices = new Set();
-      for (const item of chosenItems) {
-        const idx = fullInventory.findIndex((invItem, j) => !usedIndices.has(j) && (invItem.id === item.id || invItem === item));
-        if (idx !== -1) usedIndices.add(idx);
-      }
-      fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
-      filteredInventory = [...fullInventory];
-      renderInventory();
-      syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+      // Tum kontroller basarili: Videodaki gibi 'Are you sure? You are about to join this game!' sor:
+      promptJoinConfirm();
+    }
 
+    function promptJoinConfirm() {
+      const modal = document.getElementById('joinConfirmModal');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+      }
+    }
+
+    function closeJoinConfirmModal() {
+      const modal = document.getElementById('joinConfirmModal');
+      if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+      }
+    }
+
+    function confirmExecuteJoinWager() {
+      closeJoinConfirmModal();
+      if (!pendingJoinMatchId) return closeJoinMatchModal();
+      const m = matches.find(x => x.id === pendingJoinMatchId);
+      if (!m) return closeJoinMatchModal();
+
+      isSubmittingJoin = true;
+      setTimeout(() => isSubmittingJoin = false, 1200);
+
+      const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
       const normChosenItems = chosenItems.map(item => ({
         ...item,
-        value: parseCleanNumber(item.value) || 100000000
+        value: getItemCanonicalValue(item)
       }));
 
-      let joinedMatchCopy = {
-        ...m,
-        status: 'finished', // Katildigimiz mac asla acik kalamaz, dogrudan sonuclanmis/oynanmis kabul edilir
-        opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-        opponentItems: normChosenItems
-      };
+      // Videodaki yuklenme animasyonunu goster
+      showGlobalLoadingSpinner(true);
 
-      let userSaved = getMySavedMatches();
-      userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
-      userSaved.unshift(joinedMatchCopy);
-      saveMySavedMatches(userSaved);
+      setTimeout(() => {
+        showGlobalLoadingSpinner(false);
 
-      window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
-      try {
-        socket.send(JSON.stringify({
-          type: 'join_match',
-          matchId: m.id,
-          opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-          opponentItems: normChosenItems
-        }));
-      } catch (err) {
-        // Hata durumunda esyalari geri iade et
-        fullInventory.push(...normChosenItems);
+        // Index bazli kaldirma (ayni ID'ye sahip birden fazla itemin hepsinin silinmesini onler)
+        const usedIndices = new Set();
+        for (const item of chosenItems) {
+          const idx = fullInventory.findIndex((invItem, j) => !usedIndices.has(j) && (invItem.id === item.id || invItem === item));
+          if (idx !== -1) usedIndices.add(idx);
+        }
+        fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
         filteredInventory = [...fullInventory];
         renderInventory();
         syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
-        showToast("Connection error, items returned!", "error");
-        return;
-      }
 
-      closeJoinMatchModal();
-      // Dogrudan duelloya gec
-      renderMatches();
+        let joinedMatchCopy = {
+          ...m,
+          status: 'finished',
+          opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
+          opponentItems: normChosenItems
+        };
+
+        let userSaved = getMySavedMatches();
+        userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
+        userSaved.unshift(joinedMatchCopy);
+        saveMySavedMatches(userSaved);
+
+        window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
+        try {
+          socket.send(JSON.stringify({
+            type: 'join_match',
+            matchId: m.id,
+            opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
+            opponentItems: normChosenItems
+          }));
+        } catch (err) {
+          fullInventory.push(...normChosenItems);
+          filteredInventory = [...fullInventory];
+          renderInventory();
+          syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+          showToast("Connection error, items returned!", "error");
+          return;
+        }
+
+        closeJoinMatchModal();
+        renderMatches();
+      }, 650);
     }
 
     function playDuel(duel) {
