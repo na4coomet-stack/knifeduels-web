@@ -347,6 +347,114 @@
     
     
     
+    
+    /* ===== BLOXLUCK WINNER / LOSER POPUP (MATCHES VIDEO 1000024036.mp4) ===== */
+    .result-popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 7, 10, 0.88);
+      backdrop-filter: blur(8px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000010 !important;
+      padding: 16px;
+    }
+    .result-popup-card-bloxluck {
+      background: #141824;
+      border: 1.5px solid #232d3f;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 310px;
+      padding: 28px 20px 22px 20px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: bloxluckPopIn 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+    }
+    @keyframes bloxluckPopIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-icon-badge {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      border: 3px solid #22c55e;
+      transition: all 0.2s ease;
+    }
+    .result-icon-badge.badge-win {
+      border-color: #22c55e;
+      box-shadow: 0 0 22px rgba(34, 197, 94, 0.25);
+    }
+    .result-icon-badge.badge-lose {
+      border-color: #f59e0b;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.25);
+    }
+    .res-svg {
+      width: 32px;
+      height: 32px;
+    }
+    .result-title-bloxluck {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+    .result-subtitle-bloxluck {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .result-val-bloxluck {
+      font-size: 1.05rem;
+      font-weight: 900;
+      margin-bottom: 20px;
+      padding: 4px 14px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .result-val-bloxluck.val-win {
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .result-val-bloxluck.val-lose {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .btn-result-continue {
+      background: #5865f2;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 32px;
+      cursor: pointer;
+      min-width: 125px;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.35);
+      transition: all 0.15s ease;
+      letter-spacing: 0.2px;
+    }
+    .btn-result-continue:hover {
+      background: #4752c4;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(88, 101, 242, 0.45);
+    }
+
     /* ===== BLOXLUCK MATCH HISTORY STYLE (IMAGE 11) ===== */
     .bloxluck-history-card {
       background: #0d121c;
@@ -1288,11 +1396,20 @@
   </div>
 
   <div class="result-popup-overlay" id="resultPopup">
-    <div class="result-popup-card" id="resultCard">
-      <div class="result-popup-title" id="resTitle">VICTORY!</div>
-      <div class="result-popup-desc" id="resDesc">Duel reward credited to your inventory.</div>
-      <div class="result-popup-val" id="resVal">+0 Value</div>
-      <button class="blox-btn-primary" style="width:100%; padding:14px;" onclick="closeResultPopup()">CONTINUE</button>
+    <div class="result-popup-card-bloxluck" id="resultCard">
+      <div class="result-icon-badge" id="resIconBadge">
+        <svg id="resSvgWin" class="res-svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <svg id="resSvgLose" class="res-svg" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="result-title-bloxluck" id="resTitle">Winner!</div>
+      <div class="result-subtitle-bloxluck" id="resDesc">You Won This Game.</div>
+      <div class="result-val-bloxluck" id="resVal">+0 Value</div>
+      <button class="btn-result-continue" onclick="closeResultPopup()">Continue</button>
     </div>
   </div>
 
@@ -1351,6 +1468,17 @@
 
     
     
+    
+    // SAHTE ESYA KORUMASI: Katalogda olmayan veya degeri degistirilmis sahte esyalari engelle
+    function validateLegitItem(item) {
+      if (!item || !item.name) return false;
+      const cleanName = String(item.name).trim();
+      if (!BRAINROT_VALUES.hasOwnProperty(cleanName)) return false;
+      // Degeri kesinlikle resmi katalog degeri ile zorla esitle
+      item.value = BRAINROT_VALUES[cleanName];
+      return true;
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -2059,10 +2187,31 @@
               renderInventory();
               if (data.toast) showToast(data.toast, data.toastType || 'info');
             }
+          } else if (data.type === 'join_rejected' || data.type === 'match_already_joined') {
+            // IKI OYUNCU AYNI ANDA GIRERSE: Gec kalana aninda hata ver ve esyalarini hemen iade et
+            showToast(data.message || "Bu maça başka bir oyuncu katıldı!", "error");
+            if (window._lastJoinWagerBackup && window._lastJoinWagerBackup.matchId === data.matchId) {
+              fullInventory.push(...window._lastJoinWagerBackup.items);
+              filteredInventory = [...fullInventory];
+              renderInventory();
+              syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+              window._lastJoinWagerBackup = null;
+            }
+            matches = matches.filter(m => m.id !== data.matchId);
+            renderMatches();
           } else if (data.type === 'cancel_rejected') {
-            showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
+            // Kurucu gec iptal ettiyse (baskasi coktan katildiysa) mac devam eder
+            showToast("Bu maça birisi katıldı, düello başlıyor!", "info");
+            const mId = data.matchId || data.match?.id;
+            if (data.match && data.match.items) {
+              const mItemIds = new Set(data.match.items.map(i => i.id));
+              fullInventory = fullInventory.filter(i => !mItemIds.has(i.id));
+              filteredInventory = [...fullInventory];
+              renderInventory();
+              syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+            }
             let _s = getMySavedMatches();
-            const _idx = _s.findIndex(m => m.id === data.matchId);
+            const _idx = _s.findIndex(m => m.id === mId);
             if (_idx !== -1 && data.match) {
               _s[_idx] = { ..._s[_idx], ...data.match };
               saveMySavedMatches(_s);
@@ -2862,9 +3011,16 @@
         const idx = fullInventory.findIndex((item, j) => item.id === id && !usedIndices.has(j));
         if (idx !== -1) {
           const item = fullInventory[idx];
+          // Sahte esya kontrolu
+          if (!validateLegitItem(item)) {
+            errBox.style.display = 'block';
+            errBox.innerText = '❌ Geçersiz veya sahte eşya tespit edildi!';
+            isSubmittingMatch = false;
+            return;
+          }
           chosenItems.push({
             ...item,
-            value: typeof item.value === 'number' && item.value > 0 ? item.value : 100000000
+            value: BRAINROT_VALUES[item.name.trim()] || 100000000
           });
           usedIndices.add(idx);
         }
@@ -3002,7 +3158,26 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       }
 
       const chosenItems = fullInventory.filter(i => joinSelectedIds.has(i.id));
-      const totalVal = chosenItems.reduce((s, i) => s + (parseCleanNumber(i.value) || 100000000), 0);
+      
+      // Sahte esya kontrolu
+      const hasFake = chosenItems.some(i => !validateLegitItem(i));
+      if (hasFake) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Geçersiz veya sahte eşya tespit edildi!';
+        isSubmittingJoin = false;
+        return;
+      }
+
+      // Eger mac kurucu tarafindan iptal edilmisse aninda uyar
+      const liveCheck = matches.find(x => x.id === pendingJoinMatchId);
+      if (!liveCheck || liveCheck.status !== 'open' || liveCheck.opponent) {
+        errBox.style.display = 'block';
+        errBox.innerText = '❌ Bu maç kurucu tarafından iptal edildi veya başka bir oyuncu katıldı!';
+        isSubmittingJoin = false;
+        return;
+      }
+
+      const totalVal = chosenItems.reduce((s, i) => s + (BRAINROT_VALUES[i.name.trim()] || parseCleanNumber(i.value) || 100000000), 0);
 
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
@@ -3052,6 +3227,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       userSaved.unshift(joinedMatchCopy);
       saveMySavedMatches(userSaved);
 
+      window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
       try {
         socket.send(JSON.stringify({
           type: 'join_match',
@@ -3204,21 +3380,41 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         setTimeout(() => {
           arena.style.display = "none";
           coin.classList.remove('spin-k', 'spin-d');
-          // Pop-up mesaji cikartmadan direkt mac gecmisini ve arayuzu guncelle
+          openResultPopup(userWon, cleanMatchVal);
           renderMatches();
           renderInventory();
-        }, 1200);
+        }, 1100);
       }, 4200);
     }
 
     function openResultPopup(isWin, val) {
-      const card = document.getElementById('resultCard');
-      document.getElementById('resTitle').innerText = isWin ? "VICTORY!" : "DEFEAT";
-      document.getElementById('resTitle').style.color = isWin ? "#ffffff" : "#ef4444";
+      const badge = document.getElementById('resIconBadge');
+      const svgWin = document.getElementById('resSvgWin');
+      const svgLose = document.getElementById('resSvgLose');
+      const title = document.getElementById('resTitle');
+      const desc = document.getElementById('resDesc');
+      const valEl = document.getElementById('resVal');
       const absVal = Math.abs(parseCleanNumber(val));
-      document.getElementById('resVal').innerText = (isWin ? "+" : "-") + absVal.toLocaleString() + " Value";
-      card.className = isWin ? "result-popup-card" : "result-popup-card loss-card";
-      document.getElementById('resultPopup').style.display = "flex";
+
+      if (isWin) {
+        badge.className = 'result-icon-badge badge-win';
+        svgWin.style.display = 'block';
+        svgLose.style.display = 'none';
+        title.innerText = 'Winner!';
+        desc.innerText = 'You Won This Game.';
+        valEl.innerText = `+${absVal.toLocaleString()} Value`;
+        valEl.className = 'result-val-bloxluck val-win';
+      } else {
+        badge.className = 'result-icon-badge badge-lose';
+        svgWin.style.display = 'none';
+        svgLose.style.display = 'block';
+        title.innerText = 'Loser :(';
+        desc.innerText = 'You lost This Game.';
+        valEl.innerText = `-${absVal.toLocaleString()} Value`;
+        valEl.className = 'result-val-bloxluck val-lose';
+      }
+
+      document.getElementById('resultPopup').style.display = 'flex';
     }
     function closeResultPopup() {
       document.getElementById('resultPopup').style.display = "none";
