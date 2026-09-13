@@ -3847,7 +3847,7 @@
         return `
         <div class="modal-item-row-card ${isNotVal ? 'is-disabled' : ''}" data-id="${item.id}" data-val="${itemVal}"
           style="${isNotVal ? 'opacity:0.35; cursor:not-allowed;' : ''}"
-          onclick="${isNotVal ? "showToast('Bu eşyanın değeri yok (Not Value), maça konulamaz!', 'error')" : "toggleCreateItemCard(this);"}">
+          onclick="${isNotVal ? "showToast('Bu eşyanın değeri yok (Not Value), maça konulamaz!', 'error')" : "window.toggleCreateItemCard(this);"}">
           <div class="modal-item-row-left">
             <div class="modal-item-row-icon">
               <img src="${getItemImgUrl(item)}" referrerpolicy="no-referrer" onerror="handleImgError(this, '${item.name}')">
@@ -4000,20 +4000,40 @@ Your Selected: 0 Value`;
       document.getElementById('joinMatchModal').style.display = 'flex';
     }
 
-    function toggleJoinSelection(el, id) {
+    window.toggleCreateItemCard = function(el) {
+      if (!el || el.classList.contains('is-disabled')) return;
+      el.classList.toggle('is-selected');
+      const isSel = el.classList.contains('is-selected');
+      const tBtn = el.querySelector('.btn-item-sel-toggle');
+      if (tBtn) {
+        tBtn.innerText = isSel ? 'Unselect' : 'Select';
+        if (isSel) tBtn.classList.add('is-selected');
+        else tBtn.classList.remove('is-selected');
+      }
+      calculateSelectedVal();
+      updateSelectAllButtonUI();
+    };
+
+    window.toggleJoinSelection = function(el, id) {
+      if (!el || el.classList.contains('is-disabled')) return;
       const errBox = document.getElementById('joinMatchErrorBox');
       if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
+      
       el.classList.toggle('is-selected');
       const isSelNow = el.classList.contains('is-selected');
       const tBtn = el.querySelector('.btn-item-sel-toggle');
-      if (tBtn) tBtn.innerText = isSelNow ? 'Unselect' : 'Select';
+      if (tBtn) {
+        tBtn.innerText = isSelNow ? 'Unselect' : 'Select';
+        if (isSelNow) tBtn.classList.add('is-selected');
+        else tBtn.classList.remove('is-selected');
+      }
       if (isSelNow) {
         joinSelectedIds.add(id);
       } else {
         joinSelectedIds.delete(id);
       }
       calculateJoinSelectedVal();
-    }
+    };
 
     function calculateJoinSelectedVal() {
       // Secim degistiginde eski hata kutusunu aninda temizle ve gizle
