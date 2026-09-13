@@ -1489,6 +1489,19 @@
         .replace(/'/g, '&#039;');
     }
 
+    
+    function getItemCanonicalValue(item) {
+      if (!item) return 100000000;
+      const cleanName = String(item.name || '').trim();
+      if (typeof BRAINROT_VALUES !== 'undefined' && BRAINROT_VALUES.hasOwnProperty(cleanName)) {
+        return BRAINROT_VALUES[cleanName];
+      }
+      if (typeof item.value === 'number' && item.value > 0) {
+        return Math.round(item.value);
+      }
+      return parseCleanNumber(item.value) || 100000000;
+    }
+
     function parseCleanNumber(val) {
       if (typeof val === 'number') return isNaN(val) ? 0 : Math.round(val);
       if (!val) return 0;
@@ -1820,13 +1833,19 @@
             } catch(e) {}
           }
 
+          const seenInstanceIds = new Set();
           fullInventory = rawInv.map((item, idx) => {
-            const defVal = BRAINROT_VALUES[item.name] || 100000000;
+            let uniqueId = item.id;
+            if (!uniqueId || seenInstanceIds.has(uniqueId)) {
+              uniqueId = `inv_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 6)}`;
+            }
+            seenInstanceIds.add(uniqueId);
+            const canonicalVal = getItemCanonicalValue(item);
             return {
               ...item,
-              id: item.id || `inv_${Date.now()}_${idx}`,
+              id: uniqueId,
               name: item.name || 'Brainrot',
-              value: typeof item.value === 'number' && item.value > 0 ? item.value : defVal,
+              value: canonicalVal,
               rarity: item.rarity || 'Secret',
               image: getItemImgUrl(item)
             };
@@ -2317,7 +2336,7 @@
       picker.innerHTML = fullInventory.map(item => {
         const imgUrl = getItemImgUrl(item);
         const isSel = withdrawSelectedIds.has(item.id);
-        const val = typeof item.value === 'number' && item.value > 0 ? item.value : 100000000;
+        const val = getItemCanonicalValue(item);
         return `
         <div class="withdraw-pick-row" data-id="${item.id}" onclick="toggleWithdrawItem('${item.id}')"
           style="display:flex; align-items:center; gap:10px; padding:9px 10px; background:${isSel ? '#1a2a14' : '#141a24'}; border:1.5px solid ${isSel ? '#22c55e' : '#1e2634'}; border-radius:10px; cursor:pointer; transition:all 0.15s; user-select:none;">
@@ -2859,7 +2878,7 @@
       const minAllowed = Math.floor(matchTarget * 0.95);
       const maxAllowed = Math.ceil(matchTarget * 1.05);
 
-      const totalUserInvVal = fullInventory.reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0);
+      const totalUserInvVal = fullInventory.reduce((acc, i) => acc + getItemCanonicalValue(i), 0);
       if (totalUserInvVal < minAllowed) {
         return showToast(`❌ Inventory total (${totalUserInvVal.toLocaleString()}) is below required minimum (${minAllowed.toLocaleString()})!`, "error");
       }
@@ -2867,7 +2886,7 @@
       // Envanterdeki tum esyalari degerleriyle haritala
       const invWithVal = fullInventory.map(item => ({
         item,
-        val: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
+        val: getItemCanonicalValue(item)
       }));
 
       // 1. Tek basina tam araliga uyan bir esya var mi?
@@ -3026,7 +3045,7 @@
         }
       }
 
-      const totalVal = chosenItems.reduce((a, b) => a + (Number(b.value) || BRAINROT_VALUES[b.name] || 100000000), 0);
+      const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
       if (totalVal <= 0) {
         errBox.style.display = 'block';
         errBox.innerText = '❌ Match value must be greater than 0!';
@@ -3081,7 +3100,7 @@ Your Selected: 0 Value`;
 
       const picker = document.getElementById('joinItemsPicker');
       picker.innerHTML = fullInventory.map(item => {
-        const val = typeof item.value === 'number' && item.value > 0 ? item.value : 100000000;
+        const val = getItemCanonicalValue(item);
         return `
         <div class="modal-item-row-card" data-id="${item.id}" data-val="${val}" onclick="toggleJoinSelection(this, '${item.id}')">
           <div class="modal-item-row-left">
@@ -3100,6 +3119,8 @@ Your Selected: 0 Value`;
     }
 
     function toggleJoinSelection(el, id) {
+      const errBox = document.getElementById('joinMatchErrorBox');
+      if (errBox) { errBox.style.display = 'none'; errBox.innerText = ''; }
       el.classList.toggle('is-selected');
       if (joinSelectedIds.has(id)) {
         joinSelectedIds.delete(id);
@@ -3110,14 +3131,21 @@ Your Selected: 0 Value`;
     }
 
     function calculateJoinSelectedVal() {
+      // Secim degistiginde eski hata kutusunu aninda temizle ve gizle
+      const errBox = document.getElementById('joinMatchErrorBox');
+      if (errBox) {
+        errBox.style.display = 'none';
+        errBox.innerText = '';
+      }
+
       let total = 0;
       fullInventory.forEach(i => {
         if (joinSelectedIds.has(i.id)) {
-          total += (typeof i.value === 'number' && i.value > 0 ? i.value : 100000000);
+          total += getItemCanonicalValue(i);
         }
       });
       const m = matches.find(x => x.id === pendingJoinMatchId);
-      const target = m ? (Number(m.value) || 100000000) : 0;
+      const target = m ? (parseCleanNumber(m.value) || 100000000) : 0;
       const minAllowed = Math.floor(target * 0.95);
       const maxAllowed = Math.ceil(target * 1.05);
       const display = document.getElementById('joinSelectedValDisplay');
@@ -3129,7 +3157,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
       const btn = document.getElementById('btnConfirmJoinDuel');
       if (btn) {
-        btn.innerText = inRange ? `CONFIRM & DUEL (${total.toLocaleString()})` : `CONFIRM & DUEL (${total.toLocaleString()})`;
+        btn.innerText = `CONFIRM & DUEL (${total.toLocaleString()})`;
       }
     }
 
@@ -3177,7 +3205,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
 
-      const totalVal = chosenItems.reduce((s, i) => s + (BRAINROT_VALUES[i.name.trim()] || parseCleanNumber(i.value) || 100000000), 0);
+      const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
 
       const matchTarget = parseCleanNumber(m.value) || 100000000;
       const minAllowed = Math.floor(matchTarget * 0.95);
@@ -4149,7 +4177,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       if (!inv.length) return `<div class="verme-empty">This user's inventory is empty.</div>`;
       return `<div class="verme-items-list">${inv.map((item, idx) => {
         const imgUrl = getItemImgUrl(item);
-        const val = typeof item.value === 'number' && item.value > 0 ? item.value : 100000000;
+        const val = getItemCanonicalValue(item);
         return `
         <div class="verme-item">
           <div class="verme-item-icon">
