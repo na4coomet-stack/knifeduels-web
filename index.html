@@ -1577,16 +1577,17 @@
           cancelledSet = new Set(JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]'));
         } catch(e) {}
 
+        // SADECE bitmis (finished) veya oynanmis (opponent atanmis) maclar yerel gecmiste tutulabilir!
+        // Acik maclar ASLA yerel hafizadan yuklenemez, yalnizca canli sunucudan (matches) gelir!
+        list = list.filter(m => m && (m.status === 'finished' || m.opponent) && !cancelledSet.has(m.id));
+
         if (currentUser && currentUser.name) {
           const myName = String(currentUser.name).toLowerCase().trim();
           list = list.filter(m => {
-            if (m && cancelledSet.has(m.id)) return false; // Iptal edilmis maclar ASLA gorunemez!
             const creator = String(m.creatorName || '').toLowerCase().trim();
             const opponent = String(m.opponent?.name || '').toLowerCase().trim();
             return (creator === myName || opponent === myName);
           });
-        } else {
-          list = list.filter(m => m && !cancelledSet.has(m.id));
         }
         return list;
       } catch(e) { return []; }
@@ -1598,9 +1599,10 @@
       const myName = (currentUser && currentUser.name) ? String(currentUser.name).toLowerCase().trim() : '';
       for (const m of list) {
         if (!m || seen.has(m.id)) continue;
+        // SADECE bitmis maclar yerel gecmise kaydedilebilir
+        if (m.status !== 'finished' && !m.opponent) continue;
         const creator = String(m.creatorName || '').toLowerCase().trim();
         const opponent = String(m.opponent?.name || '').toLowerCase().trim();
-        // Bize ait olmayan yabanci maclari asla yerel gecmise kaydetme
         if (myName && creator !== myName && opponent !== myName) continue;
         seen.add(m.id);
         unique.push(m);
@@ -2471,14 +2473,15 @@
 
       let list;
       if (myMatchesOnly) {
-        list = userSaved;
+        // My Matches:
+        // 1. Canli sunucuda benim kurdugum ve su an acik olan maclar:
+        const myLiveOpenMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
+        // 2. Oynanmis/bitmis mac gecmisim:
+        list = [...myLiveOpenMatches, ...userSaved];
       } else {
-        list = matches.filter(m => {
-          if (m.status !== 'open') return false;
-          const creator = String(m.creatorName || "").toLowerCase().trim();
-          if (myName && creator === myName) return false;
-          return true;
-        });
+        // All Matches:
+        // SADECE canli sunucuda acik olan ve kurucusu baskalari olan maclar:
+        list = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() !== myName);
       }
 
       const hasFinishedInMyMatches = myMatchesOnly && list.some(m => m.status === 'finished' || m.opponent);
@@ -2889,10 +2892,9 @@
         items: chosenItems,
         status: 'open'
       };
-      let userSaved = getMySavedMatches();
-      userSaved = userSaved.filter(x => x.id !== newMatch.id);
-      userSaved.unshift(newMatch);
-      saveMySavedMatches(userSaved);
+      // Yeni olusturulan acik mac yerel localStorage'a degil, dogrudan canli matches listesine eklenir
+      matches = matches.filter(x => x.id !== newMatch.id);
+      matches.unshift(newMatch);
       if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'create_match', match: newMatch }));
       closeCreateMatchModal();
       renderMatches();
