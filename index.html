@@ -349,7 +349,7 @@
     
     
     
-    /* ===== BLOXYBET USER PROFILE MODAL (IMAGE 22) ===== */
+    /* ===== BLOXYBET USER PROFILE MODAL (MONO BLACK & WHITE) ===== */
     .user-profile-overlay {
       display: none;
       position: fixed;
@@ -363,50 +363,57 @@
       align-items: center;
       z-index: 1000015 !important;
       padding: 16px;
+      box-sizing: border-box;
     }
     .user-profile-card-bloxy {
-      background: #121722;
-      border: 1.5px solid #202b3c;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 360px;
-      padding: 24px 20px;
-      position: relative;
-      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      background: #0b0e14 !important;
+      border: 1.5px solid #202b3c !important;
+      border-radius: 20px !important;
+      width: 100% !important;
+      max-width: 340px !important;
+      padding: 22px 18px !important;
+      position: relative !important;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.95) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 12px !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
       animation: bloxluckPopIn 0.2s ease forwards;
     }
     .profile-top-header {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       padding-right: 28px;
     }
     .profile-avatar-circle {
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2.5px solid #22c55e;
-      background: #1a2230;
-      flex-shrink: 0;
-      box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+      width: 54px !important;
+      height: 54px !important;
+      min-width: 54px !important;
+      min-height: 54px !important;
+      border-radius: 50% !important;
+      overflow: hidden !important;
+      border: 2px solid #ffffff !important;
+      background: #141b26 !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.2) !important;
     }
     .profile-avatar-circle img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      display: block !important;
     }
     .profile-user-names {
       display: flex;
       flex-direction: column;
       gap: 2px;
       min-width: 0;
+      flex: 1;
     }
     .profile-user-username {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 900;
       color: #ffffff;
       white-space: nowrap;
@@ -419,69 +426,86 @@
       color: #94a3b8;
     }
     .profile-game-pill {
-      background: #18202d;
-      border: 1px solid #253347;
+      background: #06090e;
+      border: 1px solid #1a2332;
       border-radius: 8px;
-      padding: 6px 12px;
+      padding: 7px 10px;
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 800;
       color: #cbd5e1;
       letter-spacing: 0.5px;
+      width: 100%;
+      box-sizing: border-box;
     }
     .profile-stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+      gap: 8px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
     }
     .profile-stat-box {
-      background: #0d121c;
-      border: 1.5px solid #1c2636;
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+      background: #06090e !important;
+      border: 1px solid #1a2332 !important;
+      border-radius: 10px !important;
+      padding: 10px 8px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
     }
     .profile-stat-val-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 1.05rem;
-      font-weight: 900;
-      color: #ffffff;
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+    }
+    .profile-stat-val-row span:last-child {
+      font-size: 0.78rem !important;
+      font-weight: 900 !important;
+      color: #ffffff !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      letter-spacing: -0.2px !important;
     }
     .profile-stat-gem-icon {
-      color: #22c55e;
-      font-size: 0.88rem;
+      font-size: 0.75rem !important;
+      flex-shrink: 0 !important;
+      color: #ffffff !important;
     }
     .profile-stat-label {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #64748b;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+      font-size: 0.62rem !important;
+      font-weight: 800 !important;
+      color: #64748b !important;
+      letter-spacing: 0.4px !important;
+      text-transform: uppercase !important;
+      white-space: nowrap !important;
     }
     .btn-profile-tip {
-      width: 100%;
-      background: #00df81;
-      color: #000000;
-      font-weight: 900;
-      font-size: 0.95rem;
-      border: none;
-      border-radius: 10px;
-      padding: 13px;
-      cursor: pointer;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(0, 223, 129, 0.3);
-      transition: all 0.15s ease;
+      width: 100% !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-weight: 900 !important;
+      font-size: 0.95rem !important;
+      border: 1.5px solid #ffffff !important;
+      border-radius: 10px !important;
+      padding: 12px !important;
+      cursor: pointer !important;
+      text-align: center !important;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15) !important;
+      transition: all 0.15s ease !important;
     }
     .btn-profile-tip:hover {
-      background: #05f08c;
-      transform: translateY(-1px);
+      background: #f1f5f9 !important;
+      transform: translateY(-1px) !important;
     }
     .profile-tip-picker {
-      max-height: 200px;
+      max-height: 190px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -490,8 +514,8 @@
       padding-right: 2px;
     }
     .profile-tip-item-card {
-      background: #090d14;
-      border: 1.5px solid #1c2636;
+      background: #06090e;
+      border: 1.5px solid #1a2332;
       border-radius: 10px;
       padding: 8px 10px;
       display: flex;
@@ -501,11 +525,11 @@
       transition: all 0.15s ease;
     }
     .profile-tip-item-card.is-selected {
-      border-color: #00df81;
-      background: #0d1e18;
+      border-color: #ffffff !important;
+      background: #141b26 !important;
     }
 
-    /* ===== BLOXLUCK WINNER / LOSER POPUP (MATCHES VIDEO 1000024036.mp4) ===== */
+/* ===== BLOXLUCK WINNER / LOSER POPUP (MATCHES VIDEO 1000024036.mp4) ===== */
     .result-popup-overlay {
       display: none;
       position: fixed;
@@ -1610,7 +1634,7 @@
         <div id="profileTipPickerContainer" style="display:none; margin-top:10px;">
           <div style="font-size:0.8rem; font-weight:800; color:#94a3b8; margin-bottom:6px;">Select a Brainrot from your inventory to tip:</div>
           <div class="profile-tip-picker" id="profTipItemsPicker"></div>
-          <button class="btn-profile-tip" id="btnSendTipConfirm" onclick="promptConfirmTip()" style="margin-top:10px; background:#22c55e; display:none;">
+          <button class="btn-profile-tip" id="btnSendTipConfirm" onclick="promptConfirmTip()" style="margin-top:10px; background:#ffffff; color:#000; display:none;">
             SEND TIP 🎁
           </button>
         </div>
@@ -1626,10 +1650,10 @@
       <p style="font-size:0.83rem; color:#94a3b8; margin-bottom:8px; line-height:1.45;">You are about to tip this item to <b id="tipConfirmTargetName" style="color:#38bdf8;">@User</b>:</p>
       <div id="tipConfirmItemDisplay" style="font-size:1rem; font-weight:900; color:#facc15; margin-bottom:14px; font-style:italic;">Item Name</div>
       <p style="font-size:0.75rem; color:#ef4444; margin-bottom:14px; font-weight:700;">This item will be permanently transferred to their inventory.</p>
-      <div style="font-size:2.2rem; font-weight:900; color:#00df81; margin-bottom:16px;" id="tipCountdownNumber">3</div>
+      <div style="font-size:2.2rem; font-weight:900; color:#ffffff; margin-bottom:16px;" id="tipCountdownNumber">3</div>
       <div class="blox-btn-row">
         <button class="blox-btn-cancel" onclick="cancelTipConfirm()">CANCEL</button>
-        <button class="blox-btn-primary" id="btnFinalConfirmTip" onclick="executeTipTransfer()" disabled style="opacity:0.4; cursor:not-allowed; background:#00df81; color:#000;">CONFIRM</button>
+        <button class="blox-btn-primary" id="btnFinalConfirmTip" onclick="executeTipTransfer()" disabled style="opacity:0.4; cursor:not-allowed; background:#ffffff; color:#000;">CONFIRM</button>
       </div>
     </div>
   </div>
@@ -1792,7 +1816,6 @@
 
       // Modal reset
       document.getElementById('profUsername').innerText = `@${cleanTarget}`;
-      document.getElementById('profUserAvatar').src = getSafeAvatar(null, cleanTarget);
       
       const lower = cleanTarget.toLowerCase();
       let roleText = 'User';
@@ -1800,11 +1823,36 @@
       else if (lower === '26ktricky') roleText = '🛡️ Admin';
       document.getElementById('profUserRole').innerText = roleText;
 
+      // Avatar bulma onceligi:
+      let foundAvatar = '';
+      if (currentUser && currentUser.name.toLowerCase() === lower && currentUser.avatar) {
+        foundAvatar = currentUser.avatar;
+      }
+      if (!foundAvatar) {
+        const mWithAv = matches.find(m => 
+          (m.creatorName && m.creatorName.toLowerCase() === lower && m.creatorAvatar) ||
+          (m.opponent?.name && m.opponent.name.toLowerCase() === lower && m.opponent.avatar)
+        );
+        if (mWithAv) {
+          foundAvatar = (mWithAv.creatorName.toLowerCase() === lower) ? mWithAv.creatorAvatar : mWithAv.opponent.avatar;
+        }
+      }
+      document.getElementById('profUserAvatar').src = getSafeAvatar(foundAvatar, cleanTarget);
+
       document.getElementById('profileTipPickerContainer').style.display = 'none';
       document.getElementById('btnToggleTipPicker').innerText = 'Tip';
       document.getElementById('userProfileModal').style.display = 'flex';
 
-      // Load stats from server or local profile map
+      // Canli Roblox avatarini sunucudan cek
+      fetch(`/api/avatar/${encodeURIComponent(cleanTarget)}`)
+        .then(r => r.json())
+        .then(avData => {
+          if (avData && avData.avatarUrl) {
+            document.getElementById('profUserAvatar').src = avData.avatarUrl;
+          }
+        }).catch(() => {});
+
+      // Istatistikleri topla
       let totalBet = 0;
       let totalProfit = 0;
       let totalWon = 0;
@@ -1821,7 +1869,6 @@
         }
       } catch(e) {}
 
-      // Calculate bet/won/lost stats from all available matches
       const allM = [...matches, ...getMySavedMatches()];
       allM.forEach(m => {
         const c = String(m.creatorName || '').toLowerCase().trim();
