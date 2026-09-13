@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1805,16 +1806,14 @@
                   };
 
                   if (sIdx !== -1) {
-                    userSaved[sIdx] = updatedMatchObj;
-                  } else {
-                    userSaved.unshift(updatedMatchObj);
+                    userSaved.splice(sIdx, 1);
                   }
+                  userSaved.unshift(updatedMatchObj);
                   hasChanges = true;
 
                   let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
                   if (userWon) {
                     curProfit += cleanMatchVal;
-                    // Kazandigimizda rakip esyalari envantere ekle
                     const rawLoot = isCreator ? (sm.opponentItems || []) : (sm.items || []);
                     const newLoot = rawLoot.map((item, idx) => ({
                       ...item,
@@ -1826,12 +1825,10 @@
                       filteredInventory = [...fullInventory];
                       needsInvSync = true;
                     }
-                    const otherPlayer = isCreator ? (sm.opponent?.name || 'Player') : sm.creatorName;
-                    showToast(`🏆 Sen yokken @${otherPlayer} ile maçın sonuçlandı ve KAZANDIN! (+${cleanMatchVal.toLocaleString()} Val)`, "success");
+                    // Mesaj/bildirim atilmaz, direkt mac gecmisine islenir
                   } else {
                     curProfit -= cleanMatchVal;
-                    const otherPlayer = isCreator ? (sm.opponent?.name || 'Player') : sm.creatorName;
-                    showToast(`😔 Sen yokken @${otherPlayer} ile maçın sonuçlandı ve kaybettin. (-${cleanMatchVal.toLocaleString()} Val)`, "info");
+                    // Mesaj/bildirim atilmaz, direkt mac gecmisine islenir
                   }
 
                   localStorage.setItem(getProfitStorageKey(), curProfit.toString());
@@ -1996,9 +1993,7 @@
             const isCreator = myName === (duel.creatorName || "").toLowerCase();
             const isOpponent = myName === (duel.opponent?.name || "").toLowerCase();
 
-            if (isCreator) {
-              showToast(`⚔️ @${duel.opponent?.name || 'Player'} joined your duel! Live coin rolling...`, "success");
-            }
+            // Canlı düello bildirimsiz direkt başlar
 
             renderMatches();
             if (!handledDuelIds.has(duel.id)) {
@@ -3019,7 +3014,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       }
 
       closeJoinMatchModal();
-      showToast("Joined match! Rolling duel...", "success");
+      // Dogrudan duelloya gec
       renderMatches();
     }
 
@@ -3153,9 +3148,10 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         setTimeout(() => {
           arena.style.display = "none";
           coin.classList.remove('spin-k', 'spin-d');
-          openResultPopup(userWon, cleanMatchVal);
+          // Pop-up mesaji cikartmadan direkt mac gecmisini ve arayuzu guncelle
           renderMatches();
-        }, 1100);
+          renderInventory();
+        }, 1200);
       }, 4200);
     }
 
