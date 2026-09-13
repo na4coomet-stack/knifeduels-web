@@ -1430,13 +1430,19 @@
     </div>
   </div>
 
-  <div class="blox-auth-overlay" id="gwWinnerModal" style="display:none;">
-    <div class="blox-auth-card" style="text-align:center; max-width:340px; border-color:#facc15; box-shadow:0 0 35px rgba(250,204,21,0.3);">
-      <div style="font-size:2.5rem; margin-bottom:8px;">🏆</div>
-      <h3 style="font-size:1.3rem; font-weight:900; color:#facc15; margin-bottom:6px;">GIVEAWAY ENDED!</h3>
-      <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:10px;">Winner of <b id="gwWinnerItem" style="color:#fff;"></b>:</p>
-      <div id="gwWinnerName" style="font-size:1.5rem; font-weight:900; color:#ffffff; background:#1a1a2e; border:2px solid #facc15; border-radius:12px; padding:12px; margin-bottom:18px;"></div>
-      <button class="blox-btn-primary" style="width:100%; background:#facc15; color:#000;" onclick="closeGwWinnerModal()">CLOSE</button>
+  <!-- BIG YOU WON THE GIVEAWAY MODAL -->
+  <div class="blox-auth-overlay" id="gwWinnerModal" style="display:none; z-index:1000030 !important;">
+    <div class="blox-auth-card" style="text-align:center; max-width:340px; border:2px solid #facc15; box-shadow:0 0 45px rgba(250,204,21,0.4); background:#0c1018; border-radius:20px; padding:26px 20px;">
+      <div style="font-size:3rem; margin-bottom:6px;">🏆</div>
+      <h2 style="font-size:1.5rem; font-weight:900; color:#facc15; margin-bottom:4px; letter-spacing:-0.5px;">YOU WON THE GIVEAWAY!</h2>
+      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:12px;">Congratulations! You won:</p>
+      <div style="width:80px; height:80px; margin:0 auto 10px auto; background:#141b27; border:2px solid #facc15; border-radius:14px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <img id="gwWinnerImg" src="" style="width:100%; height:100%; object-fit:contain;" referrerpolicy="no-referrer">
+      </div>
+      <div id="gwWinnerItem" style="font-size:1.25rem; font-weight:900; color:#ffffff; margin-bottom:4px;">Brainrot</div>
+      <div id="gwWinnerVal" style="font-size:0.85rem; font-weight:800; color:#facc15; margin-bottom:12px;">0 Value</div>
+      <p style="font-size:0.75rem; color:#22c55e; font-weight:800; margin-bottom:16px;">✓ Item has been credited to your inventory!</p>
+      <button class="blox-btn-primary" style="width:100%; background:#facc15; color:#000; font-size:0.95rem; padding:13px; font-weight:900; border-radius:10px;" onclick="closeGwWinnerModal()">CLAIM & CLOSE 🎁</button>
     </div>
   </div>
 
@@ -2503,18 +2509,15 @@
         if (data.success && data.userData) {
           let rawInv = data.userData.inventory || [];
 
-          // KURAL 2: bennaref, emirwg, 26ktricky dışındaki hesaplar varsayılan olarak 0 eşya ile başlar
-          // Sunucudan gelen istenmeyen default 10 starter eşyasını temizle
-          if (!isAdmin) {
-            const hasCustomGiven = rawInv.some(i => i.id && (i.id.startsWith('br_') || i.id.startsWith('dep_')));
-            if (!hasCustomGiven) {
-              rawInv = [];
-              fetch('/api/sync-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })
-              }).catch(() => {});
-            }
+          // KURAL: Kazanılan hiçbir eşya ASLA silinemez! 
+          // Sadece ve sadece eski 10 adet başlangıç eşyası kalıntısı varsa temizle:
+          if (!isAdmin && rawInv.length > 0 && rawInv.every(i => /^sec_\d+$/.test(i.id || ''))) {
+            rawInv = [];
+            fetch('/api/sync-user', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })
+            }).catch(() => {});
           }
 
           // KURAL 1: emirwg veya herhangi bir hesap için sunucu eski 311/317 eşyayı geri yüklemeye çalışırsa
@@ -2653,13 +2656,7 @@
       fetchInitialTickets();
       fetchInitialGiveaway();
       setupWebSocket();
-      try {
-        const savedWinner = localStorage.getItem('kd_gw_winner');
-        if (savedWinner) {
-          const wData = JSON.parse(savedWinner);
-          if (wData && wData.winner) showGiveawayWinner(wData);
-        }
-      } catch(e) {}
+// Cekilis bittikten sonra sayfa yenilenince kaybolur
       switchSideTab('chat');
     });
 
@@ -2775,9 +2772,16 @@
 
     async function fetchInitialGiveaway() {
       try {
-        const res = await fetch('/api/giveaway');
+        const res = await fetch('/api/giveaway?t=' + Date.now());
         const data = await res.json();
-        if (data.success && data.giveaway) { activeGiveaway = data.giveaway; updateGiveawayUI(); }
+        if (data.success && data.giveaway && Date.now() < (data.giveaway.endTime || 0)) {
+          activeGiveaway = data.giveaway;
+          updateGiveawayUI();
+        } else {
+          activeGiveaway = null;
+          const banner = document.getElementById('activeGiveawayBanner');
+          if (banner) banner.style.display = 'none'; // Yenileyince tamamen kaybolur
+        }
       } catch(e) {}
     }
 
@@ -2835,6 +2839,9 @@
             tickets = data.tickets || [];
             updateAllTicketCounters();
             renderTicketTransactions();
+          } else if (data.type === 'giveaway_ended') {
+            // Sunucudan resmi tek kazanan geldi!
+            handleOfficialGiveawayEnded(data);
           } else if (data.type === 'sync_giveaway') {
             activeGiveaway = data.giveaway;
             updateGiveawayUI();
@@ -3220,17 +3227,9 @@
     }
 
     function pickAndShowGiveawayWinner() {
+      // Kazanan YALNIZCA SUNUCU TARAFINDAN belirlenir!
+      // Client asla Math.random ile farkli kazanan uretmez.
       if (!activeGiveaway) return;
-      let winner = '';
-      const users = activeGiveaway.joinedUsers || [];
-      if (users.length > 0) {
-        winner = users[Math.floor(Math.random() * users.length)];
-      } else {
-        winner = 'No participants';
-      }
-      const winnerData = { winner, item: activeGiveaway.itemName };
-      localStorage.setItem('kd_gw_winner', JSON.stringify(winnerData));
-      showGiveawayWinner(winnerData);
 
       // Kazanan oyuncunun envanterine esyayi gercekten ekle
       if (winner && winner !== 'No participants') {
@@ -3275,6 +3274,41 @@
       }
     }
 
+    
+    function handleOfficialGiveawayEnded(data) {
+      const banner = document.getElementById('activeGiveawayBanner');
+      if (gwTimerInterval) clearInterval(gwTimerInterval);
+
+      const winner = data.winner;
+      const itemName = data.itemName;
+      const itemVal = data.itemVal || BRAINROT_VALUES[itemName] || 100000000;
+      const img = data.img || `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent((itemName || '').replace(/ /g, '_'))}.png`;
+
+      // Cekilis kutusunda kazananin adini goster: [Kazananin Useri] Won!
+      if (banner && banner.style.display !== 'none') {
+        const timerText = document.getElementById('gwTimerText');
+        const btn = document.getElementById('btnJoinGw');
+        if (timerText) timerText.innerText = 'Ended';
+        if (btn) {
+          btn.innerText = winner ? `@${winner} Won!` : 'Ended';
+          btn.className = 'btn-gw-join joined';
+        }
+        const itemTitle = document.getElementById('gwItemTitle');
+        if (itemTitle) {
+          itemTitle.innerHTML = `${escapeHtml(itemName)} &nbsp;<span style="color:#facc15; font-size:0.85rem; font-weight:900;">🎉 @${escapeHtml(winner)} Won!</span>`;
+        }
+      }
+
+      // Eger kazanan BIZ ISEK: Ekranda buyuk 'YOU WON THE GIVEAWAY!' penceresi ac!
+      if (currentUser && winner && currentUser.name.toLowerCase() === winner.toLowerCase()) {
+        document.getElementById('gwWinnerItem').innerText = itemName;
+        document.getElementById('gwWinnerVal').innerText = `${itemVal.toLocaleString()} Value`;
+        const imgEl = document.getElementById('gwWinnerImg');
+        if (imgEl) imgEl.src = img;
+        document.getElementById('gwWinnerModal').style.display = 'flex';
+      }
+    }
+
     function showGiveawayWinner(data) {
       document.getElementById('gwWinnerItem').innerText = data.item || '';
       document.getElementById('gwWinnerName').innerText = data.winner ? `🎉 @${data.winner}` : '😔 No participants';
@@ -3307,7 +3341,7 @@
           clearInterval(gwTimerInterval);
           document.getElementById('gwTimerText').innerText = "Ended";
           btn.innerText = "Ended"; btn.className = "btn-gw-join joined";
-          if (!localStorage.getItem('kd_gw_winner')) pickAndShowGiveawayWinner();
+          // Sunucu websocket ile giveaway_ended gonderecek
         } else {
           const hours = Math.floor(remaining / 3600000);
           const mins = Math.floor((remaining % 3600000) / 60000);
@@ -4083,28 +4117,26 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
         const userWon = isCreator ? creatorWon : !creatorWon;
 
-        // Her ganimete benzersiz ID ata (ayni ID cakismasini onle)
-        const rawLoot = [...(duel.items || []), ...(duel.opponentItems || [])];
+        // Ganimeti eksiksiz garantile: Hem kurucu hem rakip esyalari birlestir
+        let creatorLoot = duel.items || [];
+        let oppLoot = duel.opponentItems || [];
+        if (!oppLoot.length && window._lastJoinWagerBackup && window._lastJoinWagerBackup.items) {
+          oppLoot = window._lastJoinWagerBackup.items;
+        }
+
+        const rawLoot = [...creatorLoot, ...oppLoot];
         const allLoot = rawLoot.map((item, idx) => ({
           ...item,
           id: 'loot_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
-          value: parseCleanNumber(item.value) || 100000000
+          value: getItemCanonicalValue(item)
         }));
 
-        // Multi-tab korumasi: Ayni macin odulu baska bir sekmede zaten islendiyse tekrar ekleme
-        const duelTabLockKey = 'kd_duel_done_' + duel.id;
-        const alreadyDone = localStorage.getItem(duelTabLockKey);
-        
         let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
-        if (!alreadyDone) {
-          localStorage.setItem(duelTabLockKey, 'true');
-          setTimeout(() => localStorage.removeItem(duelTabLockKey), 60000);
-          if (userWon) { 
-            curProfit += cleanMatchVal; 
-            fullInventory.push(...allLoot); 
-          } else { 
-            curProfit -= cleanMatchVal; 
-          }
+        if (userWon) { 
+          curProfit += cleanMatchVal; 
+          fullInventory.push(...allLoot); 
+        } else { 
+          curProfit -= cleanMatchVal; 
         }
         
         localStorage.setItem(getProfitStorageKey(), curProfit.toString());
