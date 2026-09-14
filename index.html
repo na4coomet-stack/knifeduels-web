@@ -1556,6 +1556,40 @@
     .mini-coin-badge {
       display: none !important;
     }
+
+    /* STATIC CRISP BLOXLUCK HISTORY COIN BOX (NO ANIMATION CONFLICTS) */
+    .history-coin-box {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease;
+      box-sizing: border-box;
+    }
+    .history-coin-box:hover {
+      transform: scale(1.06);
+    }
+    .history-coin-box.history-coin-k {
+      background: radial-gradient(circle, #222 0%, #000 100%);
+      border: 3px solid #ffffff;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+    .history-coin-box.history-coin-d {
+      background: radial-gradient(circle, #f8fafc 0%, #cbd5e1 100%);
+      border: 3px solid #000000;
+      color: #000000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
 </style>
 </head>
 <body>
@@ -2176,7 +2210,10 @@
     const _origFetch = window.fetch;
     window.fetch = function(url, options) {
       if (typeof url === 'string' && url.startsWith('/api/')) {
-        url = BACKEND_URL + url;
+        const isLocal = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+        if (!isLocal) {
+          url = BACKEND_URL + url;
+        }
       }
       return _origFetch(url, options);
     };
@@ -3379,11 +3416,11 @@
       _wsConnecting = true;
       if (_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
       try {
-        const _wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const _autoWsUrl = (location.host && !location.origin.startsWith('file'))
-          ? `${_wsProto}//${location.host}`
+        const isLocal = (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+        const wsUrl = isLocal
+          ? ((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host)
           : 'wss://knifeduels-backend-2.onrender.com';
-        socket = new WebSocket(window.CUSTOM_WS_URL || _autoWsUrl);
+        socket = new WebSocket(window.CUSTOM_WS_URL || wsUrl);
         socket.onopen = () => {
           _wsConnecting = false;
           fetchInitialMatches();
@@ -3998,10 +4035,11 @@
 
     function renderMatches() {
       const container = document.getElementById('matchesContainer');
+      if (!container) return;
       const myName = (currentUser && currentUser.name) ? String(currentUser.name).toLowerCase().trim() : "";
       const userSaved = getMySavedMatches();
 
-      // Giriş yapılmamışsa My Matches modu kesinlikle kapalıdır
+      // Giriş yapılmamışsa My Matches modu kapalıdır
       if (!currentUser) {
         myMatchesOnly = false;
       }
@@ -4009,12 +4047,13 @@
       let list = [];
       if (myMatchesOnly && currentUser) {
         // MY MATCHES MODU:
-        // 1. Canli sunucuda veya yerelde benim kurdugum acik maclar
-        const myOpenFromMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
-        const myOpenFromSaved = userSaved.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
+        // 1. Sunucuda veya yerelde benim kurduğum açık maçlar
+        const myOpenFromMatches = matches.filter(m => m && m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
+        const myOpenFromSaved = userSaved.filter(m => m && m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
         
-        // 2. Benim bitmis maclarim (kazandigim veya kaybettigim)
+        // 2. Benim geçmiş bitmiş maçlarım
         const myFinished = userSaved.filter(m => {
+          if (!m) return false;
           if (m.status !== 'finished' && !m.opponent) return false;
           const c = String(m.creatorName || "").toLowerCase().trim();
           const o = String(m.opponent?.name || "").toLowerCase().trim();
@@ -4030,14 +4069,13 @@
         });
       } else {
         // ALL MATCHES MODU:
-        // 1. TÜM açık maçlar (Benim kurduklarım + başkalarının kurdukları, hepsi gözükür!)
-        const mySavedOpen = userSaved.filter(m => m.status === 'open');
-        const openMatches = [...mySavedOpen, ...matches.filter(m => m.status === 'open')];
+        // 1. Canlı sunucudaki tüm açık maçlar
+        const openMatches = matches.filter(m => m && m.status === 'open');
         
-        // 2. Canlı oynanan (rolling) veya bitmiş maçlar
-        const serverLiveOrFinished = matches.filter(m => m.status === 'rolling' || m.status === 'finished' || Boolean(m.opponent));
+        // 2. Canlı oynanan veya bitmiş maçlar
+        const serverLiveOrFinished = matches.filter(m => m && (m.status === 'rolling' || m.status === 'finished' || Boolean(m.opponent)));
         
-        // 3. Yerel akıştaki son bitmiş maçlar
+        // 3. Genel geçmiş akışı
         const recentFinished = getPublicFinishedMatches();
 
         const combined = [...openMatches, ...serverLiveOrFinished, ...recentFinished];
@@ -4059,7 +4097,13 @@
         const creatorClean = String(m.creatorName || "").toLowerCase().trim();
         const isMy = Boolean(myName && creatorClean === myName);
 
-        // My Matches modundayken başkasının henüz girilmemiş açık maçlarını gösterme
+        // KURAL: All Matches modundayken kullanıcının kendi kurduğu açık maç All Matches'de görünmez!
+        // Sadece My Matches modunda "Cancel Match" olarak görünür.
+        if (!myMatchesOnly && isMy && m.status === 'open') {
+          return '';
+        }
+
+        // KURAL: My Matches modundayken başkasının açık maçları görünmez
         if (myMatchesOnly && !isMy && !m.opponent && m.status !== 'finished') {
           return '';
         }
@@ -4075,30 +4119,19 @@
           const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
 
-          const rollingInfo = (window._activeRollingDuels && window._activeRollingDuels.get(m.id)) || null;
-          const isRolling = Boolean(m.status === 'rolling' || (rollingInfo && rollingInfo.isRolling));
-
-          const coinAnimClass = isRolling
-            ? (winnerSide === 'K' ? 'mini-spin-k' : 'mini-spin-d')
-            : (winnerSide === 'K' ? 'mini-settled-k' : 'mini-settled-d');
-
+          // Statik, pürüzsüz ve temiz Bloxluck Coin Rozeti (Tüm animasyonların aynı anda oynamasını önler!)
           const winnerChipHtml = `
-            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip - Arenada İzle">
-              <div class="mini-coin-stage">
-                <div class="mini-flipper-coin ${coinAnimClass}" id="cardCoin_${m.id}">
-                  <div class="mini-coin-face mini-face-k">K</div>
-                  <div class="mini-coin-face mini-face-d">D</div>
-                </div>
-              </div>
+            <div class="history-coin-box ${winnerSide === 'K' ? 'history-coin-k' : 'history-coin-d'}" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="Kazanan: ${winnerSide}">
+              ${winnerSide}
             </div>
-            <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada 3D Canlı İzle">👁️</button>
+            <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada Canlı İzle">👁️</button>
           `;
 
           const p1Val = (m.items || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
           const p2Val = (m.opponentItems || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
 
           return `
-          <div class="bloxluck-history-card is-finished ${isRolling ? 'is-live' : ''}">
+          <div class="bloxluck-history-card is-finished">
             <div class="history-players-col">
               <div class="history-player-row">
                 <div class="history-player-left">
