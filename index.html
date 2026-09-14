@@ -932,6 +932,44 @@
       aspect-ratio: 1 / 1 !important;
     }
 
+    /* Coin Spin Animation for live/playing matches */
+    @keyframes coinSpin3D {
+      0%   { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+    @keyframes coinGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(250,204,21,0.4), 0 0 20px rgba(250,204,21,0.2); }
+      50%       { box-shadow: 0 0 20px rgba(250,204,21,0.8), 0 0 35px rgba(250,204,21,0.4); }
+    }
+    .coin-spinning {
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px !important;
+      min-height: 44px !important;
+      border-radius: 50% !important;
+      background: radial-gradient(circle, #ffe566 0%, #facc15 50%, #b8860b 100%) !important;
+      border: 3px solid #fff !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 1.3rem !important;
+      animation: coinSpin3D 0.7s linear infinite, coinGlow 1.2s ease-in-out infinite !important;
+      flex-shrink: 0 !important;
+    }
+    .coin-spinning-label {
+      font-size: 0.58rem;
+      font-weight: 900;
+      color: #facc15;
+      text-align: center;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(250,204,21,0.6);
+    }
+    .bloxluck-history-card.is-live {
+      border-color: rgba(250, 204, 21, 0.5) !important;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.18) !important;
+    }
+
     /* Finished Match Card Layout */
     .finished-duel-box {
       display: flex;
@@ -2170,6 +2208,11 @@
       if (arena) arena.style.display = "none";
       const coin = document.getElementById('flipperCoin');
       if (coin) coin.classList.remove('spin-k', 'spin-d');
+      playingMatchIds.clear();
+      if (window._playingMatchTimers) {
+        Object.values(window._playingMatchTimers).forEach(clearTimeout);
+        window._playingMatchTimers = {};
+      }
       renderMatches();
       renderInventory();
     }
@@ -2472,6 +2515,7 @@
     let activeGiveaway = null;
     let gwTimerInterval = null;
     let handledDuelIds = new Set();
+    let playingMatchIds = new Set(); // Matches currently spinning (coin animation)
     let currentAdminViewingTicketId = null;
 
     let pendingJoinMatchId = null;
@@ -3175,8 +3219,19 @@
             }
 
             // Canlı düello bildirimsiz direkt başlar
-
+            // Coin spin animasyonu düello bitene kadar (5.5 sn) LIVE olarak kalır
+            if (!window._playingMatchTimers) window._playingMatchTimers = {};
+            if (window._playingMatchTimers[duel.id]) {
+              clearTimeout(window._playingMatchTimers[duel.id]);
+            }
+            playingMatchIds.add(duel.id);
             renderMatches();
+
+            window._playingMatchTimers[duel.id] = setTimeout(() => {
+              playingMatchIds.delete(duel.id);
+              delete window._playingMatchTimers[duel.id];
+              renderMatches();
+            }, 5500);
             if (!handledDuelIds.has(duel.id)) {
               handledDuelIds.add(duel.id);
               if (isCreator || isOpponent) {
@@ -3674,7 +3729,13 @@
         const openMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() !== myName);
         // 2. Canli akista son oynanmis bitmis maclar (ASLA ANINDA SILINMEZ! Bloxluck gibi akista kalir, yeni maclar oynandikca en eskiler silinir):
         const recentFinished = getPublicFinishedMatches();
-        list = [...openMatches, ...recentFinished];
+        const combined = [...openMatches, ...recentFinished];
+        const seen = new Set();
+        list = combined.filter(m => {
+          if (!m || !m.id || seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
       }
 
       const hasFinishedInMyMatches = myMatchesOnly && list.some(m => m.status === 'finished' || m.opponent);
@@ -3724,15 +3785,21 @@
         if (isFinishedOrPlayed) {
           const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
-          const winnerChipHtml = winnerSide === 'K'
-            ? `<div class="chip chip-black" title="Winner: K">K</div>`
-            : `<div class="chip chip-white" title="Winner: D">D</div>`;
+          const isPlaying = playingMatchIds.has(m.id);
+          const winnerChipHtml = isPlaying
+            ? `<div style="display:flex;flex-direction:column;align-items:center;">
+                <div class="coin-spinning">🪙</div>
+                <div class="coin-spinning-label">LIVE</div>
+               </div>`
+            : (winnerSide === 'K'
+                ? `<div class="chip chip-black" title="Winner: K">K</div>`
+                : `<div class="chip chip-white" title="Winner: D">D</div>`);
 
           const p1Val = (m.items || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
           const p2Val = (m.opponentItems || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
 
           return `
-          <div class="bloxluck-history-card is-finished">
+          <div class="bloxluck-history-card is-finished ${isPlaying ? 'is-live' : ''}">
             <div class="history-players-col">
               <!-- Player 1 Satırı -->
               <div class="history-player-row">
@@ -4406,6 +4473,16 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
           opponentItems: normChosenItems
         };
+
+        // Katılım onaylandığı anda maçı hemen canlı duruma al ve timer bağla
+        playingMatchIds.add(m.id);
+        if (!window._playingMatchTimers) window._playingMatchTimers = {};
+        if (window._playingMatchTimers[m.id]) clearTimeout(window._playingMatchTimers[m.id]);
+        window._playingMatchTimers[m.id] = setTimeout(() => {
+          playingMatchIds.delete(m.id);
+          delete window._playingMatchTimers[m.id];
+          renderMatches();
+        }, 5500);
 
         let userSaved = getMySavedMatches();
         userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
