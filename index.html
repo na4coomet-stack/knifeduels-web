@@ -1531,6 +1531,14 @@
     body.is-logged-in #filterToggleBtn {
       display: inline-block !important;
     }
+    /* HIDE RATIO BAR (K/D WIN COUNTERS) WHEN NOT LOGGED IN */
+    .ratio-bar {
+      display: none !important;
+    }
+    body.is-logged-in .ratio-bar {
+      display: flex !important;
+    }
+
 
     /* MINI 3D COIN - NO TEXT UNDERNEATH */
     .card-flipper-box {
@@ -2352,8 +2360,11 @@
     function parseCleanNumber(val) {
       if (typeof val === 'number') return isNaN(val) ? 0 : Math.round(val);
       if (!val) return 0;
-      const cleanStr = String(val).replace(/[^0-9]/g, '');
-      return parseInt(cleanStr, 10) || 0;
+      const str = String(val).trim();
+      const isNeg = str.startsWith('-');
+      const cleanStr = str.replace(/[^0-9]/g, '');
+      const res = parseInt(cleanStr, 10) || 0;
+      return isNeg ? -res : res;
     }
 
     
@@ -2947,7 +2958,36 @@
     }
 
     function getProfitStorageKey() {
-      return 'kd_profit_' + (currentUser ? currentUser.name.toLowerCase() : 'guest');
+      const name = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : 'guest';
+      return 'kd_profit_' + name;
+    }
+
+    function getStoredProfit() {
+      const key = getProfitStorageKey();
+      let val = parseInt(localStorage.getItem(key), 10);
+      if (isNaN(val)) {
+        if (currentUser && typeof currentUser.profit === 'number' && !isNaN(currentUser.profit)) {
+          val = currentUser.profit;
+        } else {
+          val = 0;
+        }
+      }
+      return val;
+    }
+
+    function setStoredProfit(val) {
+      let clean = parseInt(val, 10);
+      if (isNaN(clean)) clean = 0;
+      const key = getProfitStorageKey();
+      localStorage.setItem(key, clean.toString());
+      if (currentUser) {
+        currentUser.profit = clean;
+        try {
+          localStorage.setItem('kd_user', JSON.stringify(currentUser));
+        } catch(e) {}
+      }
+      updateProfitUI(clean);
+      return clean;
     }
 
     const ADMIN_ACCOUNTS = ['emirwg', 'bennaref', '26ktricky'];
@@ -3014,22 +3054,17 @@
           renderInventory();
           localStorage.setItem(savedInvKey, JSON.stringify(fullInventory));
           
-          const profitKey = getProfitStorageKey();
-          const localProfit = parseInt(localStorage.getItem(profitKey) || '0', 10);
-          const serverProfit = (typeof data.userData.profit === 'number') ? data.userData.profit : 0;
+          const localProfit = getStoredProfit();
+          const serverProfit = (typeof data.userData.profit === 'number' && !isNaN(data.userData.profit)) ? data.userData.profit : null;
           
-          // Eğer yerelde kâr varsa ve sunucu restart/0 döndüyse yerel kârı koru ve sunucuya geri yaz
-          let savedProfit = serverProfit;
-          if (serverProfit === 0 && localProfit !== 0) {
-            savedProfit = localProfit;
-            syncUserDataToServer(savedProfit);
-          } else if (serverProfit !== 0) {
-            savedProfit = serverProfit;
-          } else {
-            savedProfit = localProfit;
+          let finalProfit = localProfit;
+          if (serverProfit !== null && serverProfit !== 0) {
+            finalProfit = serverProfit;
+          } else if (localProfit !== 0) {
+            finalProfit = localProfit;
+            syncUserDataToServer(finalProfit);
           }
-          localStorage.setItem(profitKey, savedProfit.toString());
-          updateProfitUI(savedProfit);
+          setStoredProfit(finalProfit);
         }
       } catch (e) {
         const localP = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
@@ -3054,22 +3089,45 @@
     window.updateAuthVisibility = updateAuthVisibility;
 
     function updateProfitUI(val) {
+      let clean = parseInt(val, 10);
+      if (isNaN(clean)) clean = getStoredProfit();
       const pEl = document.getElementById('profitDisplay');
-      if (pEl) pEl.innerText = (val || 0).toLocaleString();
+      if (pEl) {
+        const sign = clean > 0 ? '+' : '';
+        pEl.innerText = sign + clean.toLocaleString();
+        if (clean > 0) {
+          pEl.style.color = '#22c55e';
+        } else if (clean < 0) {
+          pEl.style.color = '#ef4444';
+        } else {
+          pEl.style.color = '#ffffff';
+        }
+      }
       updateAuthVisibility();
     }
 
     async function syncUserDataToServer(newProfit) {
       if (!currentUser) return;
       const cleanUser = currentUser.name.toLowerCase().trim();
-      localStorage.setItem('kd_inv_' + cleanUser, JSON.stringify(fullInventory));
-      localStorage.setItem(getProfitStorageKey(), newProfit.toString());
+      try { localStorage.setItem('kd_inv_' + cleanUser, JSON.stringify(fullInventory)); } catch(e) {}
+      
+      const pToSync = (typeof newProfit === 'number' && !isNaN(newProfit)) ? Math.round(newProfit) : getStoredProfit();
+      setStoredProfit(pToSync);
+
       try {
-        await fetch('/api/sync-user', {
+        const res = await fetch('/api/sync-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: currentUser.name, inventory: fullInventory, profit: newProfit })
+          body: JSON.stringify({ 
+            username: currentUser.name, 
+            inventory: fullInventory, 
+            profit: pToSync 
+          })
         });
+        const data = await res.json();
+        if (data && data.success && typeof data.profit === 'number' && !isNaN(data.profit)) {
+          setStoredProfit(data.profit);
+        }
       } catch (e) {}
     }
 
@@ -3093,6 +3151,19 @@
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
+      // 1. ANINDA MAÇLARI GÖSTER (0 GECİKME - LOGİNSİZLER BEKLEMEZ)
+      try {
+        const cached = localStorage.getItem('kd_cached_matches_public');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            matches = parsed;
+          }
+        }
+      } catch(e) {}
+      updateAuthVisibility();
+      renderMatches(); // ANINDA EKRANA BASILIR!
+
       // SITEDEKI HERKESIN ENVANTERINI VE ALL MATCHES / MY MATCHES GECMISINI TEMIZLE
       // EMIRWG ENVANTERINI VE ESKI KALINTILARI TAMAMEN TEMIZLE
       // Startup purge removed to preserve profit and inventory
@@ -3134,10 +3205,14 @@
 
     async function fetchInitialMatches() {
       try {
-        const res = await fetch('/api/matches?t=' + Date.now());
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch('/api/matches?t=' + Date.now(), { signal: controller.signal });
+        clearTimeout(timeoutId);
         const data = await res.json();
         if (data.success && data.matches) {
           matches = data.matches || [];
+          try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
           
           // OFFLINE MATCH RECONCILIATION:
           // Kullanıcı sitede yokken biri maçına katıldıysa sonucu My Matches'e işle, ödül/kârı ver
@@ -3181,7 +3256,7 @@
                   userSaved.unshift(updatedMatchObj);
                   hasChanges = true;
 
-                  let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+                  let curProfit = getStoredProfit();
                   if (userWon) {
                     curProfit += cleanMatchVal;
                     const rawLoot = isCreator ? (sm.opponentItems || []) : (sm.items || []);
@@ -3294,7 +3369,11 @@
       _wsConnecting = true;
       if (_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
       try {
-        socket = new WebSocket('wss://knifeduels-backend-2.onrender.com');
+        const _wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const _autoWsUrl = (location.host && !location.origin.startsWith('file'))
+          ? `${_wsProto}//${location.host}`
+          : 'wss://knifeduels-backend-2.onrender.com';
+        socket = new WebSocket(window.CUSTOM_WS_URL || _autoWsUrl);
         socket.onopen = () => {
           _wsConnecting = false;
           fetchInitialMatches();
@@ -3313,6 +3392,7 @@
           const data = JSON.parse(e.data);
           if (data.type === 'sync_matches') {
             matches = data.matches || [];
+          try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
             renderMatches();
           } else if (data.type === 'sync_tickets') {
             tickets = data.tickets || [];
@@ -3437,6 +3517,14 @@
               }));
               filteredInventory = [...fullInventory];
               renderInventory();
+
+              // KÂR (PROFIT) GÜNCELLEMESİ
+              const incProfit = (typeof data.profit === 'number' && !isNaN(data.profit))
+                ? data.profit
+                : ((typeof data.userData?.profit === 'number' && !isNaN(data.userData.profit)) ? data.userData.profit : null);
+              if (incProfit !== null) {
+                setStoredProfit(incProfit);
+              }
               if (data.toast) showToast(data.toast, data.toastType || 'info');
             }
           } else if (data.type === 'join_rejected' || data.type === 'match_already_joined') {
@@ -4896,7 +4984,7 @@ function playDuel(duel) {
           value: getItemCanonicalValue(item)
         }));
 
-        let curProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+        let curProfit = getStoredProfit();
         if (userWon) { 
           curProfit += cleanMatchVal; 
           fullInventory.push(...allLoot); 
@@ -4904,14 +4992,14 @@ function playDuel(duel) {
           curProfit -= cleanMatchVal; 
         }
         
-        localStorage.setItem(getProfitStorageKey(), curProfit.toString());
-        updateProfitUI(curProfit);
+        setStoredProfit(curProfit);
         syncUserDataToServer(curProfit);
 
         filteredInventory = [...fullInventory];
         renderInventory();
 
         duel.status = 'finished';
+        duel.offlineResolved = true;
         duel.finishedAt = Date.now();
         duel.userWon = userWon;
         addPublicFinishedMatch(duel);
