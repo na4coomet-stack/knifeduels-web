@@ -2933,16 +2933,28 @@
       } catch(e) {}
     }
 
-    function mergeMatchesSafely(serverMatches) {
-      const localOpen = getLocalOpenMatches();
-      const userSavedOpen = getMySavedMatches().filter(m => m && m.status === 'open');
-      const inMemOpen = (matches || []).filter(m => m && m.status === 'open');
+        function mergeMatchesSafely(serverMatches) {
+      const serverList = serverMatches || [];
+      const serverIds = new Set(serverList.map(m => m.id));
+
+      // Serverda bitmis veya rakip atanmis tum maclari yerel acik listeden kaldir
+      serverList.forEach(sm => {
+        if (sm && (sm.status === 'finished' || sm.status === 'rolling' || sm.opponent)) {
+          removeLocalOpenMatch(sm.id);
+        }
+      });
+
+      // Sadece sunucuda henuz bulunmayan yerel acik maclari koru
+      const localOpen = getLocalOpenMatches().filter(m => m && m.status === 'open' && !serverIds.has(m.id));
+      const userSavedOpen = getMySavedMatches().filter(m => m && m.status === 'open' && !serverIds.has(m.id));
+
       const cancelledSet = new Set();
       try {
         cancelledSet = new Set(JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]'));
       } catch(e) {}
 
-      const combined = [...localOpen, ...userSavedOpen, ...inMemOpen, ...(serverMatches || [])];
+      // Server listesi en basta: Server durumu her zaman gercektir
+      const combined = [...serverList, ...localOpen, ...userSavedOpen];
       const seen = new Set();
       return combined.filter(m => {
         if (!m || !m.id || seen.has(m.id) || cancelledSet.has(m.id)) return false;
@@ -3297,6 +3309,94 @@
         if (data.success && data.matches) {
           matches = mergeMatchesSafely(data.matches || []);
           try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
+  // OFFLINE MATCH RECONCILIATION:
+        // Kullanici baska hesaba gectiginde veya sitede yokken macina birisi katildiysa
+        // Sonucu hemen isle, kâr/zarari hesapla, esyalari ver/al, maci gecmise tasi ve iptal edilemez yap!
+        if (currentUser && currentUser.name) {
+          const myName = String(currentUser.name).toLowerCase().trim();
+          let userSaved = getMySavedMatches();
+          let hasChanges = false;
+          let needsInvSync = false;
+
+          matches.forEach(sm => {
+            if (!sm) return;
+            const smCreator = String(sm.creatorName || '').toLowerCase().trim();
+            const smOpponent = String(sm.opponent?.name || '').toLowerCase().trim();
+            const isSmFinished = (sm.status === 'finished') || Boolean(sm.opponent);
+
+            const isCreator = (myName && smCreator === myName);
+            const isOpponent = (myName && smOpponent === myName);
+
+            if (isSmFinished && (isCreator || isOpponent)) {
+              // Acik mac hafizasindan derhal sil (artik acik degil!)
+              removeLocalOpenMatch(sm.id);
+
+              const sIdx = userSaved.findIndex(lm => lm.id === sm.id);
+              const localMatch = sIdx !== -1 ? userSaved[sIdx] : null;
+
+              if (!localMatch || localMatch.status !== 'finished' || !localMatch.offlineResolved) {
+                const winnerSide = String(sm.winnerSide || sm.side || 'K').toUpperCase().trim();
+                const p1Side = String(sm.side || 'K').toUpperCase().trim();
+                const userWon = isCreator ? (winnerSide === p1Side) : (winnerSide !== p1Side);
+                const cleanMatchVal = parseCleanNumber(sm.value) || 100000000;
+
+                const updatedMatchObj = {
+                  ...(localMatch || {}),
+                  ...sm,
+                  status: 'finished',
+                  offlineResolved: true,
+                  userWon: userWon,
+                  finishedAt: sm.finishedAt || Date.now()
+                };
+
+                addPublicFinishedMatch(updatedMatchObj);
+                if (sIdx !== -1) {
+                  userSaved.splice(sIdx, 1);
+                }
+                userSaved.unshift(updatedMatchObj);
+                hasChanges = true;
+
+                let curProfit = getStoredProfit();
+                if (userWon) {
+                  curProfit += cleanMatchVal;
+                  const rawLoot = isCreator ? (sm.opponentItems || []) : (sm.items || []);
+                  const newLoot = rawLoot.map((item, idx) => ({
+                    ...item,
+                    id: 'loot_off_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
+                    value: getItemCanonicalValue(item)
+                  }));
+                  if (newLoot.length) {
+                    fullInventory.push(...newLoot);
+                    filteredInventory = [...fullInventory];
+                    needsInvSync = true;
+                  }
+                } else {
+                  curProfit -= cleanMatchVal;
+                }
+
+                setStoredProfit(curProfit);
+                syncUserDataToServer(curProfit);
+              }
+            }
+          });
+
+          // Askıda kalan veya rakibi olan tüm maçları otomatik finished yap
+          userSaved.forEach((lm, idx) => {
+            if (lm.status !== 'finished' && lm.opponent) {
+              userSaved[idx].status = 'finished';
+              userSaved[idx].offlineResolved = true;
+              removeLocalOpenMatch(lm.id);
+              hasChanges = true;
+            }
+          });
+
+          if (hasChanges) {
+            saveMySavedMatches(userSaved);
+          }
+          if (needsInvSync) {
+            renderInventory();
+          }
+        }
           renderMatches();
         }
       } catch(e) {}
@@ -4001,8 +4101,9 @@
         const myOpenFromMatches = matches.filter(m => m && m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
         const myOpenFromSaved = userSaved.filter(m => m && m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
         
-        // 2. Benim geçmiş bitmiş maçlarım
-        const myFinished = userSaved.filter(m => {
+        // 2. Benim geçmiş bitmiş maçlarım (Hem sunucudaki matches hem yerel userSaved)
+        const allPotential = [...matches, ...userSaved];
+        const myFinished = allPotential.filter(m => {
           if (!m) return false;
           if (m.status !== 'finished' && !m.opponent) return false;
           const c = String(m.creatorName || "").toLowerCase().trim();
@@ -4065,10 +4166,22 @@
           const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
 
-          // Statik, pürüzsüz ve temiz Bloxluck Coin Rozeti (Tüm animasyonların aynı anda oynamasını önler!)
+                    const rollingInfo = (window._activeRollingDuels && window._activeRollingDuels.get(m.id)) || null;
+          // Sadece aktif olarak son 4.3 saniyede başlatılan canlı düellolarda animasyon oynar!
+          const isRolling = Boolean(rollingInfo && rollingInfo.isRolling);
+
+          const coinAnimClass = isRolling
+            ? (winnerSide === 'K' ? 'mini-spin-k' : 'mini-spin-d')
+            : (winnerSide === 'K' ? 'mini-settled-k' : 'mini-settled-d');
+
           const winnerChipHtml = `
-            <div class="history-coin-box ${winnerSide === 'K' ? 'history-coin-k' : 'history-coin-d'}" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="Kazanan: ${winnerSide}">
-              ${winnerSide}
+            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip - Arenada İzle">
+              <div class="mini-coin-stage">
+                <div class="mini-flipper-coin ${coinAnimClass}" id="cardCoin_${m.id}">
+                  <div class="mini-coin-face mini-face-k">K</div>
+                  <div class="mini-coin-face mini-face-d">D</div>
+                </div>
+              </div>
             </div>
             <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada Canlı İzle">👁️</button>
           `;
@@ -4352,19 +4465,16 @@
         }
       } catch(e) {}
 
-      let userSaved = getMySavedMatches();
+            let userSaved = getMySavedMatches();
       const mGlobal = matches.find(x => String(x.id) === targetId);
       const mSaved = userSaved.find(x => String(x.id) === targetId);
       const m = mGlobal || mSaved;
 
-      if (m && (m.status === 'finished' || m.opponent)) {
+      if (m && (m.status === 'finished' || m.status === 'rolling' || m.opponent)) {
         cancellingMatchIds.delete(targetId);
-        showToast("Bu maça birisi katıldı, iptal edilemez!", "error");
-        if (mGlobal && mSaved) {
-          userSaved = userSaved.map(x => String(x.id) === targetId ? { ...mSaved, ...mGlobal } : x);
-          saveMySavedMatches(userSaved);
-          renderMatches();
-        }
+        removeLocalOpenMatch(targetId);
+        showToast("Bu maça birisi katıldı veya maç bitti, iptal edilemez!", "error");
+        renderMatches();
         return false;
       }
 
@@ -5243,6 +5353,7 @@ function playDuel(duel) {
           currentUser = { id: pendingAuthUser.id, name: pendingAuthUser.username, avatar: pendingAuthUser.avatar };
           localStorage.setItem('kd_user', JSON.stringify(currentUser));
           await loadUserDataFromServer(pendingAuthUser.username);
+          await fetchInitialMatches();
           closeAuthModal();
           renderMatches();
           renderLoggedInState();
@@ -5286,6 +5397,7 @@ function playDuel(duel) {
         currentUser = { id: u, name: u, avatar };
         localStorage.setItem('kd_user', JSON.stringify(currentUser));
         await loadUserDataFromServer(u);
+        await fetchInitialMatches();
         closeAuthModal();
         renderMatches();
         renderLoggedInState();
