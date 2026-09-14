@@ -1516,7 +1516,39 @@
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
     }
 
-    </style>
+    
+    /* HIDE PROFIT BOX AND FILTER TOGGLE BTN WHEN NOT LOGGED IN */
+    .profit-box {
+      display: none !important;
+    }
+    body.is-logged-in .profit-box {
+      display: flex !important;
+    }
+
+    #filterToggleBtn {
+      display: none !important;
+    }
+    body.is-logged-in #filterToggleBtn {
+      display: inline-block !important;
+    }
+
+    /* MINI 3D COIN - NO TEXT UNDERNEATH */
+    .card-flipper-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+    .card-flipper-box:hover {
+      transform: scale(1.08);
+    }
+    .mini-coin-badge {
+      display: none !important;
+    }
+</style>
 </head>
 <body>
 
@@ -3008,19 +3040,15 @@
     
     function updateAuthVisibility() {
       const isLoggedIn = Boolean(currentUser && currentUser.name);
-      const profitBoxes = document.querySelectorAll('.profit-box');
-      profitBoxes.forEach(el => {
-        el.style.setProperty('display', isLoggedIn ? 'flex' : 'none', 'important');
-      });
-
-      const filterBtn = document.getElementById('filterToggleBtn');
-      if (filterBtn) {
-        filterBtn.style.setProperty('display', isLoggedIn ? 'inline-block' : 'none', 'important');
-      }
-
-      if (!isLoggedIn) {
+      if (isLoggedIn) {
+        document.body.classList.add('is-logged-in');
+      } else {
+        document.body.classList.remove('is-logged-in');
         myMatchesOnly = false;
-        updateFilterButtonUI();
+      }
+      const filterBtn = document.getElementById('filterToggleBtn');
+      if (filterBtn && !isLoggedIn) {
+        filterBtn.innerText = "My Matches";
       }
     }
     window.updateAuthVisibility = updateAuthVisibility;
