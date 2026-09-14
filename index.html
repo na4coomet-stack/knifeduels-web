@@ -1385,19 +1385,19 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      padding: 3px;
+      gap: 4px;
+      padding: 4px 6px;
       cursor: pointer;
       user-select: none;
       transition: transform 0.15s ease;
-      min-width: 54px;
+      min-width: 62px;
     }
     .card-flipper-box:hover {
       transform: scale(1.08);
     }
     .mini-coin-stage {
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       perspective: 600px;
       position: relative;
       display: flex;
@@ -1409,8 +1409,9 @@
       height: 100%;
       position: relative;
       transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
       border-radius: 50%;
-      transition: transform 0.3s ease;
+      transition: transform 0.4s cubic-bezier(0.15, 0.85, 0.25, 1);
     }
     .mini-coin-face {
       position: absolute;
@@ -1422,7 +1423,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 900;
       box-sizing: border-box;
     }
@@ -1470,17 +1471,17 @@
       font-weight: 900;
       letter-spacing: 0.4px;
       text-align: center;
-      padding: 2px 5px;
-      border-radius: 5px;
+      padding: 2px 6px;
+      border-radius: 6px;
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .mini-coin-badge.live {
+    .mini-coin-badge.rolling {
       background: rgba(250, 204, 21, 0.15);
-      border: 1px solid rgba(250, 204, 21, 0.5);
+      border: 1px solid rgba(250, 204, 21, 0.6);
       color: #facc15;
       animation: liveBadgePulse 0.9s ease-in-out infinite;
-      box-shadow: 0 0 8px rgba(250, 204, 21, 0.3);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.35);
     }
     .mini-coin-badge.winner {
       background: rgba(34, 197, 94, 0.15);
@@ -1489,7 +1490,7 @@
     }
     @keyframes liveBadgePulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.65; transform: scale(0.94); }
+      50% { opacity: 0.6; transform: scale(0.93); }
     }
 
     .btn-watch-duel {
@@ -1497,13 +1498,13 @@
       border: 1.5px solid #28364d;
       color: #94a3b8;
       border-radius: 8px;
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       transition: all 0.15s ease;
       flex-shrink: 0;
     }
@@ -1512,9 +1513,10 @@
       color: #ffffff;
       border-color: #38bdf8;
       transform: scale(1.08);
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
     }
-</style>
+
+    </style>
 </head>
 <body>
 
@@ -3321,7 +3323,7 @@
           } else if (data.type === 'match_cancelled' || data.type === 'match_removed_public') {
             matches = matches.filter(m => m.id !== data.matchId);
             renderMatches();
-          } else if (data.type === 'duel_started') {
+                    } else if (data.type === 'duel_started') {
             const duel = data.match;
             const mIdx = matches.findIndex(m => m.id === duel.id);
             if (mIdx !== -1) {
@@ -3341,8 +3343,6 @@
             const isCreator = myName && (String(duel.creatorName || "").toLowerCase().trim() === myName);
             const isOpponent = myName && (String(duel.opponent?.name || "").toLowerCase().trim() === myName);
 
-            // KRITIK DUZELTME: Sadece ve sadece kuran veya katilan BIZ ISEK yerel gecmise ekle!
-            // Baskalarinin oynadigi maclar asla bizim My Matches listemize sizamaz!
             if (isCreator || isOpponent) {
               let _saved = getMySavedMatches();
               const _sIdx = _saved.findIndex(m => m.id === duel.id);
@@ -3354,20 +3354,32 @@
               saveMySavedMatches(_saved);
             }
 
-            // Canlı düello bildirimsiz direkt başlar
-            // Coin spin animasyonu düello bitene kadar (5.5 sn) LIVE olarak kalır
-            if (!window._playingMatchTimers) window._playingMatchTimers = {};
-            if (window._playingMatchTimers[duel.id]) {
-              clearTimeout(window._playingMatchTimers[duel.id]);
+            // 3D COINFLIP ANİMASYONU (OYUNDA NASIL DÖNÜYORSA BİREBİR AYNI)
+            // Önce 4.3 sn boyunca coin 3D olarak döner, ROLLING yazar.
+            // BİTİNCE kazanan renk/sonuç gösterilir!
+            if (!window._activeRollingDuels) window._activeRollingDuels = new Map();
+            if (!window._rollingTimers) window._rollingTimers = {};
+            if (window._rollingTimers[duel.id]) {
+              clearTimeout(window._rollingTimers[duel.id]);
             }
-            playingMatchIds.add(duel.id);
+
+            const wSide = String(duel.winnerSide || 'K').toUpperCase().trim();
+            window._activeRollingDuels.set(duel.id, {
+              winnerSide: wSide,
+              isRolling: true
+            });
+
             renderMatches();
 
-            window._playingMatchTimers[duel.id] = setTimeout(() => {
-              playingMatchIds.delete(duel.id);
-              delete window._playingMatchTimers[duel.id];
+            // 4.3 saniye sonra animasyon tamamlanır ve sonuç (kazanan taraf) gösterilir!
+            window._rollingTimers[duel.id] = setTimeout(() => {
+              if (window._activeRollingDuels && window._activeRollingDuels.has(duel.id)) {
+                window._activeRollingDuels.get(duel.id).isRolling = false;
+              }
+              delete window._rollingTimers[duel.id];
               renderMatches();
-            }, 5500);
+            }, 4300);
+
             if (!handledDuelIds.has(duel.id)) {
               handledDuelIds.add(duel.id);
               if (isCreator || isOpponent) {
@@ -3918,16 +3930,22 @@
         const cAvatar = getSafeAvatar(m.creatorAvatar, m.creatorName);
         const matchVal = parseCleanNumber(m.value) || 100000000;
 
-        if (isFinishedOrPlayed) {
+                if (isFinishedOrPlayed) {
           const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
-          const isPlaying = playingMatchIds.has(m.id);
-          const coinAnimClass = isPlaying
+
+          const rollingInfo = (window._activeRollingDuels && window._activeRollingDuels.get(m.id)) || null;
+          const isRolling = Boolean(rollingInfo && rollingInfo.isRolling);
+
+          // Animasyon sırasında 3D olarak K ve D arasında döner
+          // Animasyon bitince kazanan yüzünde (settled) durur!
+          const coinAnimClass = isRolling
             ? (winnerSide === 'K' ? 'mini-spin-k' : 'mini-spin-d')
             : (winnerSide === 'K' ? 'mini-settled-k' : 'mini-settled-d');
 
-          const statusBadgeHtml = isPlaying
-            ? `<span class="mini-coin-badge live">⚡ LIVE</span>`
+          // Animasyon sırasında ROLLING gösterir, BİTİNCE kazanan renk sonucunu gösterir!
+          const statusBadgeHtml = isRolling
+            ? `<span class="mini-coin-badge rolling">⚡ ROLLING</span>`
             : `<span class="mini-coin-badge winner">🏆 ${winnerSide} WIN</span>`;
 
           const winnerChipHtml = `
@@ -3947,7 +3965,7 @@
           const p2Val = (m.opponentItems || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;
 
           return `
-          <div class="bloxluck-history-card is-finished ${isPlaying ? 'is-live' : ''}">
+          <div class="bloxluck-history-card is-finished ${isRolling ? 'is-live' : ''}">
             <div class="history-players-col">
               <!-- Player 1 Satırı -->
               <div class="history-player-row">
@@ -3980,10 +3998,9 @@
               </div>
             </div>
 
-            <!-- En Sağdaki Büyük Kazanan Coin Çipi ve Kaldır Butonu -->
-            <div class="history-winner-col" style="display:flex; align-items:center; gap:8px;">
+            <!-- Sağdaki 3D Coinflip Oyun Sahnesi (Oyunda nasıl dönüyorsa birebir aynı) -->
+            <div class="history-winner-col" style="display:flex; align-items:center; gap:6px;">
               ${winnerChipHtml}
-              
             </div>
           </div>`;
         }
@@ -4622,15 +4639,22 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           opponentItems: normChosenItems
         };
 
-        // Katılım onaylandığı anda maçı hemen canlı duruma al ve timer bağla
-        playingMatchIds.add(m.id);
-        if (!window._playingMatchTimers) window._playingMatchTimers = {};
-        if (window._playingMatchTimers[m.id]) clearTimeout(window._playingMatchTimers[m.id]);
-        window._playingMatchTimers[m.id] = setTimeout(() => {
-          playingMatchIds.delete(m.id);
-          delete window._playingMatchTimers[m.id];
+        // Katılım onaylandığı anda maçı hemen 3D rolling durumuna al
+        if (!window._activeRollingDuels) window._activeRollingDuels = new Map();
+        if (!window._rollingTimers) window._rollingTimers = {};
+        if (window._rollingTimers[m.id]) clearTimeout(window._rollingTimers[m.id]);
+        const expectedWinner = String(m.winnerSide || m.side || 'K').toUpperCase().trim();
+        window._activeRollingDuels.set(m.id, {
+          winnerSide: expectedWinner,
+          isRolling: true
+        });
+        window._rollingTimers[m.id] = setTimeout(() => {
+          if (window._activeRollingDuels && window._activeRollingDuels.has(m.id)) {
+            window._activeRollingDuels.get(m.id).isRolling = false;
+          }
+          delete window._rollingTimers[m.id];
           renderMatches();
-        }, 5500);
+        }, 4300);
 
         let userSaved = getMySavedMatches();
         userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
@@ -4668,6 +4692,15 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
            getPublicFinishedMatches().find(x => String(x.id) === String(duelOrId)) ||
            getMySavedMatches().find(x => String(x.id) === String(duelOrId)));
       if (!duel) return showToast("Match not found!", "error");
+
+      // Kart üzerindeki mini coini de tekrar 3D döndür
+      const cardCoin = document.getElementById('cardCoin_' + duel.id);
+      if (cardCoin) {
+        const wSide = String(duel.winnerSide || duel.side || 'K').toUpperCase().trim();
+        cardCoin.className = 'mini-flipper-coin';
+        void cardCoin.offsetWidth;
+        cardCoin.classList.add(wSide === 'K' ? 'mini-spin-k' : 'mini-spin-d');
+      }
 
       const arena = document.getElementById('bloxluckArena');
       const coin = document.getElementById('flipperCoin');
