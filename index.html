@@ -2913,15 +2913,15 @@
       const myName = (currentUser && currentUser.name) ? String(currentUser.name).toLowerCase().trim() : '';
       for (const m of list) {
         if (!m || seen.has(m.id)) continue;
-        // SADECE bitmis maclar yerel gecmise kaydedilebilir
-        if (m.status !== 'finished' && !m.opponent) continue;
         const creator = String(m.creatorName || '').toLowerCase().trim();
         const opponent = String(m.opponent?.name || '').toLowerCase().trim();
         if (myName && creator !== myName && opponent !== myName) continue;
         seen.add(m.id);
         unique.push(m);
       }
-      localStorage.setItem(getMyMatchesStorageKey(), JSON.stringify(unique));
+      try {
+        localStorage.setItem(getMyMatchesStorageKey(), JSON.stringify(unique));
+      } catch(e) {}
     }
 
     function handleImgError(el, name) {
@@ -3151,7 +3151,32 @@
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
-      // 1. ANINDA MAÇLARI GÖSTER (0 GECİKME - LOGİNSİZLER BEKLEMEZ)
+      // 1. KULLANICIYI VE ENVANTERİ YEREL HAFIZADAN ANINDA GERİ YÜKLE
+      const savedUser = localStorage.getItem('kd_user');
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          renderLoggedInState();
+          const cleanUser = currentUser.name.toLowerCase().trim();
+          const savedInvKey = 'kd_inv_' + cleanUser;
+          const localInv = localStorage.getItem(savedInvKey);
+          if (localInv) {
+            try {
+              fullInventory = JSON.parse(localInv);
+              filteredInventory = [...fullInventory];
+              renderInventory();
+            } catch(e) {}
+          }
+          const initP = getStoredProfit();
+          updateProfitUI(initP);
+        } catch(e) {}
+      } else {
+        updateProfitUI(0);
+      }
+
+      updateAuthVisibility();
+
+      // 2. MAÇLARI ANINDA ÇİZ (0 GECİKME)
       try {
         const cached = localStorage.getItem('kd_cached_matches_public');
         if (cached) {
@@ -3161,45 +3186,22 @@
           }
         }
       } catch(e) {}
-      updateAuthVisibility();
-      renderMatches(); // ANINDA EKRANA BASILIR!
-
-      // SITEDEKI HERKESIN ENVANTERINI VE ALL MATCHES / MY MATCHES GECMISINI TEMIZLE
-      // EMIRWG ENVANTERINI VE ESKI KALINTILARI TAMAMEN TEMIZLE
-      // Startup purge removed to preserve profit and inventory
-
-      // Startup wipe removed to preserve profit and inventory
+      renderMatches();
 
       loadLocalChatHistory();
-      document.getElementById('blackCount').innerText = blackWins;
-      document.getElementById('whiteCount').innerText = whiteWins;
+      const bEl = document.getElementById('blackCount');
+      if (bEl) bEl.innerText = blackWins;
+      const wEl = document.getElementById('whiteCount');
+      if (wEl) wEl.innerText = whiteWins;
 
-      // ZORUNLU CIKIS: Tum acik oturumlardan (emirwg, bennaref vb.) aninda cikis yap
-      const AUTH_LOGOUT_TOKEN = 'kd_force_logout_v777';
-      if (localStorage.getItem('kd_auth_reset_flag') !== AUTH_LOGOUT_TOKEN) {
-        localStorage.removeItem('kd_user');
-        localStorage.setItem('kd_auth_reset_flag', AUTH_LOGOUT_TOKEN);
-        currentUser = null;
-      }
-
-      const savedUser = localStorage.getItem('kd_user');
-      if (savedUser) {
-        try {
-          currentUser = JSON.parse(savedUser);
-          renderLoggedInState();
-          const initP = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
-          updateProfitUI(initP);
-          await loadUserDataFromServer(currentUser.name);
-        } catch (e) {}
-      } else {
-        updateProfitUI(0);
+      if (currentUser && currentUser.name) {
+        await loadUserDataFromServer(currentUser.name);
       }
 
       fetchInitialMatches();
       fetchInitialTickets();
       fetchInitialGiveaway();
       setupWebSocket();
-// Cekilis bittikten sonra sayfa yenilenince kaybolur
       switchSideTab('chat');
     });
 
@@ -3211,7 +3213,15 @@
         clearTimeout(timeoutId);
         const data = await res.json();
         if (data.success && data.matches) {
-          matches = data.matches || [];
+          const serverMatches = data.matches || [];
+          const userSavedOpen = getMySavedMatches().filter(m => m.status === 'open');
+          const mergedMatches = [...userSavedOpen, ...serverMatches];
+          const seenMerge = new Set();
+          matches = mergedMatches.filter(m => {
+            if (!m || !m.id || seenMerge.has(m.id)) return false;
+            seenMerge.add(m.id);
+            return true;
+          });
           try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
           
           // OFFLINE MATCH RECONCILIATION:
@@ -3991,21 +4001,45 @@
       const myName = (currentUser && currentUser.name) ? String(currentUser.name).toLowerCase().trim() : "";
       const userSaved = getMySavedMatches();
 
-      let list;
-      if (myMatchesOnly) {
-        // My Matches:
-        // 1. Canli sunucuda benim kurdugum ve su an acik olan maclarim:
-        const myLiveOpenMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
-        // 2. 20 dakika boyunca saklanan bitmis mac gecmisim:
-        list = [...myLiveOpenMatches, ...userSaved];
+      // Giriş yapılmamışsa My Matches modu kesinlikle kapalıdır
+      if (!currentUser) {
+        myMatchesOnly = false;
+      }
+
+      let list = [];
+      if (myMatchesOnly && currentUser) {
+        // MY MATCHES MODU:
+        // 1. Canli sunucuda veya yerelde benim kurdugum acik maclar
+        const myOpenFromMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
+        const myOpenFromSaved = userSaved.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() === myName);
+        
+        // 2. Benim bitmis maclarim (kazandigim veya kaybettigim)
+        const myFinished = userSaved.filter(m => {
+          if (m.status !== 'finished' && !m.opponent) return false;
+          const c = String(m.creatorName || "").toLowerCase().trim();
+          const o = String(m.opponent?.name || "").toLowerCase().trim();
+          return c === myName || o === myName;
+        });
+
+        const combinedMy = [...myOpenFromMatches, ...myOpenFromSaved, ...myFinished];
+        const seenMy = new Set();
+        list = combinedMy.filter(m => {
+          if (!m || !m.id || seenMy.has(m.id)) return false;
+          seenMy.add(m.id);
+          return true;
+        });
       } else {
-        // All Matches (Görsel ve Video Bloxluck Birebir):
-        // 1. Açık maçlar (Giriş yapılmışsa kendi açtığımız hariç, misafirsek tüm açık maçlar):
-        const openMatches = matches.filter(m => m.status === 'open' && (!myName || String(m.creatorName || "").toLowerCase().trim() !== myName));
-        // 2. Sunucuda canlı oynanan veya bitmiş maçlar (Misafirlerin de canlı/bitmiş maçları görebilmesi için):
+        // ALL MATCHES MODU:
+        // 1. TÜM açık maçlar (Benim kurduklarım + başkalarının kurdukları, hepsi gözükür!)
+        const mySavedOpen = userSaved.filter(m => m.status === 'open');
+        const openMatches = [...mySavedOpen, ...matches.filter(m => m.status === 'open')];
+        
+        // 2. Canlı oynanan (rolling) veya bitmiş maçlar
         const serverLiveOrFinished = matches.filter(m => m.status === 'rolling' || m.status === 'finished' || Boolean(m.opponent));
-        // 3. Yerel akışta saklanan son maçlar:
+        
+        // 3. Yerel akıştaki son bitmiş maçlar
         const recentFinished = getPublicFinishedMatches();
+
         const combined = [...openMatches, ...serverLiveOrFinished, ...recentFinished];
         const seen = new Set();
         list = combined.filter(m => {
@@ -4019,62 +4053,37 @@
       const myMatchesToolbarHtml = hasFinishedInMyMatches ? `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 2px;">
           <span style="font-size:0.8rem; font-weight:800; color:#94a3b8;">My Duels</span>
-          
         </div>` : '';
 
-      if (!list.length) {
-        container.innerHTML = `
-        <div class="empty-state">
-          <div style="font-size: 2.2rem; opacity: 0.7; margin-bottom: 4px;">⚔️</div>
-          <div style="font-weight: 800; color: #cbd5e1; font-size: 1rem;">
-            ${myMatchesOnly ? "You haven't created or played any matches yet." : "No active matches available."}
-          </div>
-          <div style="font-size: 0.8rem; color: #64748b;">
-            Click "Create Match" above to start a new duel!
-          </div>
-        </div>`;
-        return;
-      }
-
-      container.innerHTML = myMatchesToolbarHtml + list.map(m => {
+      const renderedCards = list.map(m => {
         const creatorClean = String(m.creatorName || "").toLowerCase().trim();
-        const isMy = (myName && creatorClean === myName);
+        const isMy = Boolean(myName && creatorClean === myName);
 
-        // KURAL 1: All Matches modunda kendi kurdugumuz acik maclar KESINLIKLE gorunmez
-        if (!myMatchesOnly && isMy) {
-          return '';
-        }
-
-        // KURAL 2: My Matches modunda baskasinin henuz girilmemis acik maclari KESINLIKLE gorunmez
+        // My Matches modundayken başkasının henüz girilmemiş açık maçlarını gösterme
         if (myMatchesOnly && !isMy && !m.opponent && m.status !== 'finished') {
           return '';
         }
 
-        // KURAL 3: Eger bir mac bitmisse VEYA rakip (opponent) atanmissa,
-        // bu mac KESINLIKLE bitmis gecmis karti (Bloxluck History Card) olarak cikar! ASLA 'Join Match' butonu cikamaz!
-        const isFinishedOrPlayed = (m.status === 'finished') || Boolean(m.opponent);
+        const isFinishedOrPlayed = (m.status === 'finished') || (m.status === 'rolling') || Boolean(m.opponent);
 
         const p1Side = m.side || 'K';
         const p2Side = p1Side === 'K' ? 'D' : 'K';
         const cAvatar = getSafeAvatar(m.creatorAvatar, m.creatorName);
         const matchVal = parseCleanNumber(m.value) || 100000000;
 
-                if (isFinishedOrPlayed) {
+        if (isFinishedOrPlayed) {
           const winnerSide = String(m.winnerSide || p1Side).toUpperCase().trim();
           const oAvatar = getSafeAvatar(m.opponent?.avatar, m.opponent?.name || 'Player');
 
           const rollingInfo = (window._activeRollingDuels && window._activeRollingDuels.get(m.id)) || null;
-          const isRolling = Boolean(rollingInfo && rollingInfo.isRolling);
+          const isRolling = Boolean(m.status === 'rolling' || (rollingInfo && rollingInfo.isRolling));
 
-          // Animasyon sırasında 3D olarak K ve D arasında döner
-          // Animasyon bitince kazanan yüzünde (settled) durur!
           const coinAnimClass = isRolling
             ? (winnerSide === 'K' ? 'mini-spin-k' : 'mini-spin-d')
             : (winnerSide === 'K' ? 'mini-settled-k' : 'mini-settled-d');
 
-          // Kullanıcı isteği: Altta 'K veya D Win' yazısı gözükmesin, sadece 3D dönen coin olsun!
           const winnerChipHtml = `
-            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip (Tıkla ve Arenada İzle)">
+            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip - Arenada İzle">
               <div class="mini-coin-stage">
                 <div class="mini-flipper-coin ${coinAnimClass}" id="cardCoin_${m.id}">
                   <div class="mini-coin-face mini-face-k">K</div>
@@ -4091,7 +4100,6 @@
           return `
           <div class="bloxluck-history-card is-finished ${isRolling ? 'is-live' : ''}">
             <div class="history-players-col">
-              <!-- Player 1 Satırı -->
               <div class="history-player-row">
                 <div class="history-player-left">
                   <span class="chip ${p1Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p1Side}</span>
@@ -4106,7 +4114,6 @@
                 <div class="history-val-text">Value: ${p1Val.toLocaleString()}</div>
               </div>
 
-              <!-- Player 2 Satırı -->
               <div class="history-player-row">
                 <div class="history-player-left">
                   <span class="chip ${p2Side === 'K' ? 'chip-black' : 'chip-white'} history-chip">${p2Side}</span>
@@ -4122,7 +4129,6 @@
               </div>
             </div>
 
-            <!-- Sağdaki 3D Coinflip Oyun Sahnesi (Oyunda nasıl dönüyorsa birebir aynı) -->
             <div class="history-winner-col" style="display:flex; align-items:center; gap:6px;">
               ${winnerChipHtml}
             </div>
@@ -4132,7 +4138,6 @@
         const minAllowed = Math.floor(matchVal * 0.95);
         const maxAllowed = Math.ceil(matchVal * 1.05);
 
-        // Bloxluck Birebir Kart Tasarımı (Görsel 12)
         return `
         <div class="blox-duel-card">
           <div class="card-top-row">
@@ -4165,7 +4170,23 @@
             `}
           </div>
         </div>`;
-      }).join('');
+      }).filter(Boolean);
+
+      if (!renderedCards.length) {
+        container.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size: 2.2rem; opacity: 0.7; margin-bottom: 4px;">⚔️</div>
+          <div style="font-weight: 800; color: #cbd5e1; font-size: 1rem;">
+            ${myMatchesOnly ? "You haven't created or played any matches yet." : "No active matches available."}
+          </div>
+          <div style="font-size: 0.8rem; color: #64748b;">
+            Click "Create Match" above to start a new duel!
+          </div>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = myMatchesToolbarHtml + renderedCards.join('');
     }
 
     let cancellingMatchIds = new Set();
@@ -4430,6 +4451,69 @@
 
     function closeCreateMatchModal() { document.getElementById('createMatchModal').style.display = 'none'; }
 
+    
+    function loadLocalChatHistory() {
+      try {
+        const history = JSON.parse(localStorage.getItem('kd_chat_history') || '[]');
+        if (Array.isArray(history)) {
+          history.forEach(m => {
+            if (typeof appendChatMessage === 'function') appendChatMessage(m);
+          });
+        }
+      } catch(e) {}
+    }
+
+    function updateSelectAllButtonUI() {
+      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card:not(.is-disabled)');
+      const btn = document.getElementById('btnSelectAllCreateMatch');
+      if (!cards.length || !btn) return;
+      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
+      btn.innerText = allSelected ? 'Deselect All ✕' : 'Select All 📦';
+    }
+
+    window.toggleSelectAllCreateMatch = function() {
+      const cards = document.querySelectorAll('#modalItemsPicker .modal-item-row-card:not(.is-disabled)');
+      if (!cards.length) {
+        if (typeof showToast === 'function') showToast("Seçilebilecek değerli eşya yok!", "info");
+        return;
+      }
+      const allSelected = Array.from(cards).every(c => c.classList.contains('is-selected'));
+      const btn = document.getElementById('btnSelectAllCreateMatch');
+
+      cards.forEach(c => {
+        if (allSelected) {
+          c.classList.remove('is-selected');
+          const tBtn = c.querySelector('.btn-item-sel-toggle');
+          if (tBtn) {
+            tBtn.innerText = 'Select';
+            tBtn.classList.remove('is-selected');
+          }
+        } else {
+          c.classList.add('is-selected');
+          const tBtn = c.querySelector('.btn-item-sel-toggle');
+          if (tBtn) {
+            tBtn.innerText = 'Unselect';
+            tBtn.classList.add('is-selected');
+          }
+        }
+      });
+      if (btn) btn.innerText = allSelected ? 'Select All 📦' : 'Deselect All ✕';
+      if (typeof calculateSelectedVal === 'function') calculateSelectedVal();
+    };
+
+    function filterModalPickerItems(type) {
+      const input = document.getElementById(type === 'create' ? 'createMatchSearchInput' : 'joinMatchSearchInput');
+      const q = (input?.value || '').toLowerCase().trim();
+      const pickerId = type === 'create' ? 'modalItemsPicker' : 'joinItemsPicker';
+      const cards = document.querySelectorAll('#' + pickerId + ' .modal-item-row-card');
+      cards.forEach(card => {
+        const nameEl = card.querySelector('.modal-item-row-name');
+        const name = (nameEl?.innerText || '').toLowerCase();
+        card.style.display = (!q || name.includes(q)) ? 'flex' : 'none';
+      });
+    }
+    window.filterModalPickerItems = filterModalPickerItems;
+
     function calculateSelectedVal() {
       let total = 0;
       document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected').forEach(el => {
@@ -4444,14 +4528,20 @@
       document.getElementById('sideSelectD').className = s === 'D' ? 'side-card active' : 'side-card';
     }
 
-    let isSubmittingMatch = false;
+        let isSubmittingMatch = false;
     function confirmCreatedMatch() {
       if (isSubmittingMatch) return;
+      isSubmittingMatch = true;
+
       const selectedEls = document.querySelectorAll('#modalItemsPicker .modal-item-row-card.is-selected');
       const errBox = document.getElementById('createMatchErrorBox');
       if (!selectedEls.length) {
-        errBox.style.display = 'block';
-        errBox.innerText = '❌ Select at least one Brainrot item!';
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.innerText = '❌ Select at least one Brainrot item!';
+        }
+        showToast("Select at least one Brainrot item!", "error");
+        isSubmittingMatch = false;
         return;
       }
       const chosenIds = Array.from(selectedEls).map(el => el.getAttribute('data-id'));
@@ -4470,45 +4560,79 @@
         }
       }
 
-      // Not Value esya kontrolu: Degeri 0 olan hicbir esya maca konulamaz
+      // Not Value esya kontrolu
       const hasNotValItem = chosenItems.some(i => getItemCanonicalValue(i) <= 0);
       if (hasNotValItem) {
-        errBox.style.display = 'block';
-        errBox.innerText = '❌ Değeri olmayan (Not Value) eşyalarla maç açılamaz!';
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.innerText = '❌ Değeri olmayan (Not Value) eşyalarla maç açılamaz!';
+        }
+        showToast("Değeri olmayan (Not Value) eşyalarla maç açılamaz!", "error");
         isSubmittingMatch = false;
         return;
       }
 
       const totalVal = chosenItems.reduce((s, i) => s + getItemCanonicalValue(i), 0);
       if (totalVal <= 0) {
-        errBox.style.display = 'block';
-        errBox.innerText = '❌ Match value must be greater than 0!';
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.innerText = '❌ Match value must be greater than 0!';
+        }
+        showToast("Match value must be greater than 0!", "error");
         isSubmittingMatch = false;
         return;
       }
+
+      // Eşyaları envanterden düş
       fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
       filteredInventory = [...fullInventory];
       renderInventory();
-      syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+      syncUserDataToServer(getStoredProfit());
+
+      const cName = (currentUser && currentUser.name) ? currentUser.name : 'Player';
+      const cAvatar = (currentUser && currentUser.avatar) ? currentUser.avatar : '';
+      const cId = (currentUser && currentUser.id) ? String(currentUser.id) : '0';
 
       const newMatch = {
-        id: Math.random().toString(36).substring(2, 9),
-        creatorName: currentUser.name,
-        creatorAvatar: currentUser.avatar,
-        creatorId: String(currentUser.id),
-        side: selectedCoin,
+        id: 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        creatorName: cName,
+        creatorAvatar: cAvatar,
+        creatorId: cId,
+        side: selectedCoin || 'K',
         value: totalVal,
         items: chosenItems,
         status: 'open'
       };
-      // Yeni olusturulan acik mac yerel localStorage'a degil, dogrudan canli matches listesine eklenir
-      matches = matches.filter(x => x.id !== newMatch.id);
+
+      // 1. Canlı matches listesine ekle
+      matches = matches.filter(x => x && x.id !== newMatch.id);
       matches.unshift(newMatch);
-      if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'create_match', match: newMatch }));
+
+      // 2. My Matches listesine ekle ve kaydet
+      let userSaved = getMySavedMatches();
+      userSaved = userSaved.filter(x => x && x.id !== newMatch.id);
+      userSaved.unshift(newMatch);
+      saveMySavedMatches(userSaved);
+
+      // 3. Genel önbelleğe kaydet
+      try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
+
+      // 4. WebSocket üzerinden sunucuya ilet
+      if (socket && socket.readyState === 1) {
+        socket.send(JSON.stringify({ type: 'create_match', match: newMatch }));
+      }
+      
+      // 5. HTTP POST ile yedek olarak sunucuya kaydet
+      fetch('/api/create-match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ match: newMatch })
+      }).catch(() => {});
+
       closeCreateMatchModal();
       renderMatches();
       showToast("Match created successfully!", "success");
-      setTimeout(() => isSubmittingMatch = false, 800);
+      setTimeout(() => isSubmittingMatch = false, 600);
     }
 
     function openJoinMatchModal(matchId) {
