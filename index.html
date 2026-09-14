@@ -2982,13 +2982,21 @@
           renderInventory();
           localStorage.setItem(savedInvKey, JSON.stringify(fullInventory));
           
-          let savedProfit = 0;
-          if (typeof data.userData.profit === 'number') {
-            savedProfit = data.userData.profit;
+          const profitKey = getProfitStorageKey();
+          const localProfit = parseInt(localStorage.getItem(profitKey) || '0', 10);
+          const serverProfit = (typeof data.userData.profit === 'number') ? data.userData.profit : 0;
+          
+          // Eğer yerelde kâr varsa ve sunucu restart/0 döndüyse yerel kârı koru ve sunucuya geri yaz
+          let savedProfit = serverProfit;
+          if (serverProfit === 0 && localProfit !== 0) {
+            savedProfit = localProfit;
+            syncUserDataToServer(savedProfit);
+          } else if (serverProfit !== 0) {
+            savedProfit = serverProfit;
           } else {
-            savedProfit = parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10);
+            savedProfit = localProfit;
           }
-          localStorage.setItem(getProfitStorageKey(), savedProfit.toString());
+          localStorage.setItem(profitKey, savedProfit.toString());
           updateProfitUI(savedProfit);
         }
       } catch (e) {
@@ -2997,9 +3005,30 @@
       }
     }
 
+    
+    function updateAuthVisibility() {
+      const isLoggedIn = Boolean(currentUser && currentUser.name);
+      const profitBoxes = document.querySelectorAll('.profit-box');
+      profitBoxes.forEach(el => {
+        el.style.setProperty('display', isLoggedIn ? 'flex' : 'none', 'important');
+      });
+
+      const filterBtn = document.getElementById('filterToggleBtn');
+      if (filterBtn) {
+        filterBtn.style.setProperty('display', isLoggedIn ? 'inline-block' : 'none', 'important');
+      }
+
+      if (!isLoggedIn) {
+        myMatchesOnly = false;
+        updateFilterButtonUI();
+      }
+    }
+    window.updateAuthVisibility = updateAuthVisibility;
+
     function updateProfitUI(val) {
       const pEl = document.getElementById('profitDisplay');
       if (pEl) pEl.innerText = (val || 0).toLocaleString();
+      updateAuthVisibility();
     }
 
     async function syncUserDataToServer(newProfit) {
@@ -3038,31 +3067,9 @@
     window.addEventListener('DOMContentLoaded', async () => {
       // SITEDEKI HERKESIN ENVANTERINI VE ALL MATCHES / MY MATCHES GECMISINI TEMIZLE
       // EMIRWG ENVANTERINI VE ESKI KALINTILARI TAMAMEN TEMIZLE
-      const EMIRWG_PURGE_FLAG = 'kd_emirwg_force_clean_2026_v99';
-      if (localStorage.getItem('kd_emirwg_cleaned') !== EMIRWG_PURGE_FLAG) {
-        localStorage.removeItem('kd_inv_emirwg');
-        localStorage.setItem('kd_inv_emirwg', JSON.stringify([]));
-        localStorage.setItem('kd_emirwg_cleaned', EMIRWG_PURGE_FLAG);
-        if (currentUser && currentUser.name.toLowerCase().trim() === 'emirwg') {
-          fullInventory = [];
-          filteredInventory = [];
-          syncUserDataToServer(0);
-        }
-      }
+      // Startup purge removed to preserve profit and inventory
 
-      const WIPE_TOKEN = 'kd_wipe_all_inv_matches_clean_2026';
-      if (localStorage.getItem('kd_wipe_data_flag') !== WIPE_TOKEN) {
-        try {
-          Object.keys(localStorage).forEach(k => {
-            if (k.startsWith('kd_inv_') || k.startsWith('kd_my_matches_') || k === 'kd_public_finished_feed' || k.startsWith('kd_profit_')) {
-              localStorage.removeItem(k);
-            }
-          });
-          localStorage.setItem('kd_wipe_data_flag', WIPE_TOKEN);
-        } catch(e) {}
-        fullInventory = [];
-        filteredInventory = [];
-      }
+      // Startup wipe removed to preserve profit and inventory
 
       loadLocalChatHistory();
       document.getElementById('blackCount').innerText = blackWins;
@@ -3202,6 +3209,7 @@
         if (data.success && data.tickets) {
           tickets = data.tickets;
           updateAllTicketCounters();
+      updateAuthVisibility();
           renderTicketTransactions();
         }
       } catch(e) {}
@@ -3281,6 +3289,7 @@
           } else if (data.type === 'sync_tickets') {
             tickets = data.tickets || [];
             updateAllTicketCounters();
+      updateAuthVisibility();
             renderTicketTransactions();
           } else if (data.type === 'giveaway_ended') {
             // Sunucudan resmi tek kazanan geldi!
@@ -3293,6 +3302,7 @@
           } else if (data.type === 'ticket_created') {
             tickets.unshift(data.ticket);
             updateAllTicketCounters();
+      updateAuthVisibility();
             const sideOpen = document.getElementById('sideNavWrapper').classList.contains('open');
             if (!sideOpen || currentSideTab !== 'tickets') {
               incrementMenuBadge(1);
@@ -3630,6 +3640,7 @@
       if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'create_ticket', ticket: newTicket }));
       closeWithdrawModal();
       updateAllTicketCounters();
+      updateAuthVisibility();
       showToast(`Withdraw request submitted! Check the Tickets tab 📤`, "success");
       setTimeout(() => isSubmittingWithdraw = false, 1000);
     }
@@ -3873,11 +3884,13 @@
         list = [...myLiveOpenMatches, ...userSaved];
       } else {
         // All Matches (Görsel ve Video Bloxluck Birebir):
-        // 1. Baskalarinin kurdugu acik maclar:
-        const openMatches = matches.filter(m => m.status === 'open' && String(m.creatorName || "").toLowerCase().trim() !== myName);
-        // 2. Canli akista son oynanmis bitmis maclar (ASLA ANINDA SILINMEZ! Bloxluck gibi akista kalir, yeni maclar oynandikca en eskiler silinir):
+        // 1. Açık maçlar (Giriş yapılmışsa kendi açtığımız hariç, misafirsek tüm açık maçlar):
+        const openMatches = matches.filter(m => m.status === 'open' && (!myName || String(m.creatorName || "").toLowerCase().trim() !== myName));
+        // 2. Sunucuda canlı oynanan veya bitmiş maçlar (Misafirlerin de canlı/bitmiş maçları görebilmesi için):
+        const serverLiveOrFinished = matches.filter(m => m.status === 'rolling' || m.status === 'finished' || Boolean(m.opponent));
+        // 3. Yerel akışta saklanan son maçlar:
         const recentFinished = getPublicFinishedMatches();
-        const combined = [...openMatches, ...recentFinished];
+        const combined = [...openMatches, ...serverLiveOrFinished, ...recentFinished];
         const seen = new Set();
         list = combined.filter(m => {
           if (!m || !m.id || seen.has(m.id)) return false;
@@ -3943,20 +3956,15 @@
             ? (winnerSide === 'K' ? 'mini-spin-k' : 'mini-spin-d')
             : (winnerSide === 'K' ? 'mini-settled-k' : 'mini-settled-d');
 
-          // Animasyon sırasında ROLLING gösterir, BİTİNCE kazanan renk sonucunu gösterir!
-          const statusBadgeHtml = isRolling
-            ? `<span class="mini-coin-badge rolling">⚡ ROLLING</span>`
-            : `<span class="mini-coin-badge winner">🏆 ${winnerSide} WIN</span>`;
-
+          // Kullanıcı isteği: Altta 'K veya D Win' yazısı gözükmesin, sadece 3D dönen coin olsun!
           const winnerChipHtml = `
-            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip - Tıkla ve Arenada İzle">
+            <div class="card-flipper-box" onclick="event.stopPropagation(); spectateDuel('${m.id}')" title="3D Coinflip (Tıkla ve Arenada İzle)">
               <div class="mini-coin-stage">
                 <div class="mini-flipper-coin ${coinAnimClass}" id="cardCoin_${m.id}">
                   <div class="mini-coin-face mini-face-k">K</div>
                   <div class="mini-coin-face mini-face-d">D</div>
                 </div>
               </div>
-              ${statusBadgeHtml}
             </div>
             <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada 3D Canlı İzle">👁️</button>
           `;
@@ -5016,6 +5024,7 @@ function playDuel(duel) {
           renderMatches();
           renderLoggedInState();
           updateAllTicketCounters();
+      updateAuthVisibility();
           showToast(`✅ Successfully logged in! Welcome @${currentUser.name}`, "success");
         } else {
           const errBox = document.createElement('div');
@@ -5058,6 +5067,7 @@ function playDuel(duel) {
         renderMatches();
         renderLoggedInState();
         updateAllTicketCounters();
+      updateAuthVisibility();
         renderTicketTransactions();
         showToast(`Logged in as @${u}!`, "success");
       } else {
@@ -5083,6 +5093,7 @@ function playDuel(duel) {
           </div>
         </div>`;
       updateAllTicketCounters();
+      updateAuthVisibility();
     }
 
     function logout() { 
@@ -5319,6 +5330,7 @@ function playDuel(duel) {
         t.messages.push(sysMsg);
       }
       updateAllTicketCounters();
+      updateAuthVisibility();
       renderTicketTransactions();
       renderAdminTicketList();
       const statusEl = document.getElementById('uTicketStatus');
@@ -6002,6 +6014,7 @@ function playDuel(duel) {
       if (socket && socket.readyState === 1) socket.send(JSON.stringify({ type: 'create_ticket', ticket: newTicket }));
       closeDepositModal();
       updateAllTicketCounters();
+      updateAuthVisibility();
       showToast("Deposit request submitted! Check the Tickets tab 📥", "success");
     }
   </script>
