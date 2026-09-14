@@ -2906,6 +2906,51 @@
       localStorage.setItem('kd_public_finished_feed', JSON.stringify(list));
     }
 
+        function getLocalOpenMatches() {
+      try {
+        let list = JSON.parse(localStorage.getItem('kd_open_matches_local') || '[]');
+        let cancelledSet = new Set(JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]'));
+        return list.filter(m => m && m.status === 'open' && !cancelledSet.has(m.id));
+      } catch(e) { return []; }
+    }
+
+    function saveLocalOpenMatch(match) {
+      if (!match || match.status !== 'open') return;
+      try {
+        let list = getLocalOpenMatches();
+        list = list.filter(m => m && m.id !== match.id);
+        list.unshift(match);
+        localStorage.setItem('kd_open_matches_local', JSON.stringify(list));
+      } catch(e) {}
+    }
+
+    function removeLocalOpenMatch(matchId) {
+      if (!matchId) return;
+      try {
+        let list = getLocalOpenMatches();
+        list = list.filter(m => m && m.id !== matchId);
+        localStorage.setItem('kd_open_matches_local', JSON.stringify(list));
+      } catch(e) {}
+    }
+
+    function mergeMatchesSafely(serverMatches) {
+      const localOpen = getLocalOpenMatches();
+      const userSavedOpen = getMySavedMatches().filter(m => m && m.status === 'open');
+      const inMemOpen = (matches || []).filter(m => m && m.status === 'open');
+      const cancelledSet = new Set();
+      try {
+        cancelledSet = new Set(JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]'));
+      } catch(e) {}
+
+      const combined = [...localOpen, ...userSavedOpen, ...inMemOpen, ...(serverMatches || [])];
+      const seen = new Set();
+      return combined.filter(m => {
+        if (!m || !m.id || seen.has(m.id) || cancelledSet.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      });
+    }
+
     function getMySavedMatches() {
       try {
         let list = JSON.parse(localStorage.getItem(getMyMatchesStorageKey()) || '[]');
@@ -3250,103 +3295,8 @@
         clearTimeout(timeoutId);
         const data = await res.json();
         if (data.success && data.matches) {
-          const serverMatches = data.matches || [];
-          const userSavedOpen = getMySavedMatches().filter(m => m.status === 'open');
-          const mergedMatches = [...userSavedOpen, ...serverMatches];
-          const seenMerge = new Set();
-          matches = mergedMatches.filter(m => {
-            if (!m || !m.id || seenMerge.has(m.id)) return false;
-            seenMerge.add(m.id);
-            return true;
-          });
+          matches = mergeMatchesSafely(data.matches || []);
           try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
-          
-          // OFFLINE MATCH RECONCILIATION:
-          // Kullanıcı sitede yokken biri maçına katıldıysa sonucu My Matches'e işle, ödül/kârı ver
-          if (currentUser && currentUser.name) {
-            const myName = currentUser.name.toLowerCase().trim();
-            let userSaved = getMySavedMatches();
-            let hasChanges = false;
-            let needsInvSync = false;
-
-            matches.forEach(sm => {
-              const smCreator = String(sm.creatorName || '').toLowerCase().trim();
-              const smOpponent = String(sm.opponent?.name || '').toLowerCase().trim();
-              const isSmFinished = (sm.status === 'finished') || Boolean(sm.opponent);
-
-              const isCreator = (myName && smCreator === myName);
-              const isOpponent = (myName && smOpponent === myName);
-
-              if (isSmFinished && (isCreator || isOpponent)) {
-                const sIdx = userSaved.findIndex(lm => lm.id === sm.id);
-                const localMatch = sIdx !== -1 ? userSaved[sIdx] : null;
-
-                if (!localMatch || localMatch.status !== 'finished' || !localMatch.offlineResolved) {
-                  const winnerSide = String(sm.winnerSide || 'K').toUpperCase().trim();
-                  const p1Side = String(sm.side || 'K').toUpperCase().trim();
-                  const userWon = isCreator ? (winnerSide === p1Side) : (winnerSide !== p1Side);
-                  const cleanMatchVal = parseCleanNumber(sm.value) || 100000000;
-
-                  const updatedMatchObj = {
-                    ...(localMatch || {}),
-                    ...sm,
-                    status: 'finished',
-                    offlineResolved: true,
-                    userWon: userWon,
-                    finishedAt: sm.finishedAt || Date.now()
-                  };
-
-                  addPublicFinishedMatch(updatedMatchObj);
-                  if (sIdx !== -1) {
-                    userSaved.splice(sIdx, 1);
-                  }
-                  userSaved.unshift(updatedMatchObj);
-                  hasChanges = true;
-
-                  let curProfit = getStoredProfit();
-                  if (userWon) {
-                    curProfit += cleanMatchVal;
-                    const rawLoot = isCreator ? (sm.opponentItems || []) : (sm.items || []);
-                    const newLoot = rawLoot.map((item, idx) => ({
-                      ...item,
-                      id: 'loot_off_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 6),
-                      value: parseCleanNumber(item.value) || BRAINROT_VALUES[item.name] || 100000000
-                    }));
-                    if (newLoot.length) {
-                      fullInventory.push(...newLoot);
-                      filteredInventory = [...fullInventory];
-                      needsInvSync = true;
-                    }
-                    // Mesaj/bildirim atilmaz, direkt mac gecmisine islenir
-                  } else {
-                    curProfit -= cleanMatchVal;
-                    // Mesaj/bildirim atilmaz, direkt mac gecmisine islenir
-                  }
-
-                  localStorage.setItem(getProfitStorageKey(), curProfit.toString());
-                  updateProfitUI(curProfit);
-                }
-              }
-            });
-
-            // userSaved icindeki tum askida kalmis / opponent'i olan maclari otomatik temizle
-            userSaved.forEach((lm, idx) => {
-              if (lm.status !== 'finished' && lm.opponent) {
-                userSaved[idx].status = 'finished';
-                userSaved[idx].offlineResolved = true;
-                hasChanges = true;
-              }
-            });
-
-            if (hasChanges) {
-              saveMySavedMatches(userSaved);
-            }
-            if (needsInvSync) {
-              renderInventory();
-              syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
-            }
-          }
-
           renderMatches();
         }
       } catch(e) {}
@@ -3437,9 +3387,9 @@
         };
         socket.onmessage = (e) => {
           const data = JSON.parse(e.data);
-          if (data.type === 'sync_matches') {
-            matches = data.matches || [];
-          try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
+                    if (data.type === 'sync_matches') {
+            matches = mergeMatchesSafely(data.matches || []);
+            try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
             renderMatches();
           } else if (data.type === 'sync_tickets') {
             tickets = data.tickets || [];
@@ -4097,11 +4047,7 @@
         const creatorClean = String(m.creatorName || "").toLowerCase().trim();
         const isMy = Boolean(myName && creatorClean === myName);
 
-        // KURAL: All Matches modundayken kullanıcının kendi kurduğu açık maç All Matches'de görünmez!
-        // Sadece My Matches modunda "Cancel Match" olarak görünür.
-        if (!myMatchesOnly && isMy && m.status === 'open') {
-          return '';
-        }
+
 
         // KURAL: My Matches modundayken başkasının açık maçları görünmez
         if (myMatchesOnly && !isMy && !m.opponent && m.status !== 'finished') {
@@ -4425,6 +4371,7 @@
       // Maci yerel listelerden aninda cikar
       matches = matches.filter(x => String(x.id) !== targetId);
       userSaved = userSaved.filter(x => String(x.id) !== targetId);
+      removeLocalOpenMatch(targetId);
       saveMySavedMatches(userSaved);
       try {
         let pFeed = getPublicFinishedMatches().filter(x => String(x.id) !== targetId);
@@ -4637,25 +4584,28 @@
         status: 'open'
       };
 
-      // 1. Canlı matches listesine ekle
+            // 1. Canlı matches listesine ekle
       matches = matches.filter(x => x && x.id !== newMatch.id);
       matches.unshift(newMatch);
 
-      // 2. My Matches listesine ekle ve kaydet
+      // 2. Yerel kalıcı açık maç hafızasına kaydet (asla silinemez)
+      saveLocalOpenMatch(newMatch);
+
+      // 3. My Matches listesine ekle ve kaydet
       let userSaved = getMySavedMatches();
       userSaved = userSaved.filter(x => x && x.id !== newMatch.id);
       userSaved.unshift(newMatch);
       saveMySavedMatches(userSaved);
 
-      // 3. Genel önbelleğe kaydet
+      // 4. Genel önbelleğe kaydet
       try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
 
-      // 4. WebSocket üzerinden sunucuya ilet
+      // 5. WebSocket üzerinden sunucuya ilet
       if (socket && socket.readyState === 1) {
         socket.send(JSON.stringify({ type: 'create_match', match: newMatch }));
       }
       
-      // 5. HTTP POST ile yedek olarak sunucuya kaydet
+      // 6. HTTP POST ile yedek olarak sunucuya kaydet
       fetch('/api/create-match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
