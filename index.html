@@ -3162,16 +3162,30 @@
       const overlay = document.getElementById('mutedBlockOverlay');
       const reasonEl = document.getElementById('mutedOverlayReason');
       const expEl = document.getElementById('mutedOverlayExpiry');
-      const reason = (typeof mute === 'string') ? mute : (mute?.reason || 'Muted by administrator');
-      if (reasonEl) reasonEl.innerText = reason;
-      if (expEl) {
-        if (mute && mute.expiresAt) {
+      
+      let reasonText = 'Muted by administrator';
+      let remainingText = 'Active Mute';
+
+      if (typeof mute === 'string' && mute) {
+        reasonText = mute;
+      } else if (mute && typeof mute === 'object') {
+        if (mute.reason) reasonText = mute.reason;
+        if (mute.expiresAt) {
           const mins = Math.max(1, Math.round((mute.expiresAt - Date.now()) / 60000));
-          expEl.innerText = `${mins} minute(s) remaining`;
-        } else {
-          expEl.innerText = 'Active';
+          if (mins >= 60) {
+            const hrs = Math.floor(mins / 60);
+            const m = mins % 60;
+            remainingText = `${hrs} hour(s) ${m} minute(s) remaining`;
+          } else {
+            remainingText = `${mins} minute(s) remaining`;
+          }
+        } else if (mute.durationMinutes) {
+          remainingText = `${mute.durationMinutes} minute(s) remaining`;
         }
       }
+
+      if (reasonEl) reasonEl.innerText = reasonText;
+      if (expEl) expEl.innerText = remainingText;
       if (overlay) overlay.style.display = 'flex';
     }
     window.showMutedBlockOverlay = showMutedBlockOverlay;
@@ -4088,6 +4102,7 @@
       renderMatches();
 
       loadLocalChatHistory();
+      fetchInitialChat();
       const bEl = document.getElementById('blackCount');
       if (bEl) bEl.innerText = blackWins;
       const wEl = document.getElementById('whiteCount');
@@ -4237,7 +4252,25 @@
     }
 
     const seenChatIds = new Set();
-    function appendChatMessage(msg) {
+    window.seenChatIds = seenChatIds;
+
+    function saveChatMessageLocally(msg) {
+      if (!msg || !msg.text) return;
+      try {
+        let history = JSON.parse(localStorage.getItem('kd_chat_history') || '[]');
+        if (!Array.isArray(history)) history = [];
+        const rawSender = msg.senderName || msg.sender || 'User';
+        const msgKey = msg.id || (rawSender + '_' + msg.text + '_' + (msg.time || ''));
+        const exists = history.some(m => (m.id && m.id === msg.id) || (((m.senderName || m.sender || 'User') + '_' + m.text + '_' + (m.time || '')) === msgKey));
+        if (!exists) {
+          history.push(msg);
+          if (history.length > 80) history = history.slice(-80);
+          localStorage.setItem('kd_chat_history', JSON.stringify(history));
+        }
+      } catch(e) {}
+    }
+
+    function appendChatMessage(msg, saveLocal = true) {
       const box = document.getElementById('chatMessagesBox');
       if (!box || !msg || !msg.text) return;
       
@@ -4245,6 +4278,10 @@
       const msgKey = msg.id || (rawSender + '_' + msg.text + '_' + (msg.time || ''));
       if (seenChatIds.has(msgKey)) return; // 2 KERE YAZMAYI KESIN OLARAK ENGELLE
       seenChatIds.add(msgKey);
+
+      if (saveLocal) {
+        saveChatMessageLocally(msg);
+      }
 
       const safeSender = escapeHtml(rawSender);
       const safeText = escapeHtml(msg.text);
@@ -4264,6 +4301,17 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    async function fetchInitialChat() {
+      try {
+        const res = await fetch('/api/chat?t=' + Date.now());
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.messages)) {
+          data.messages.forEach(m => appendChatMessage(m, true));
+        }
+      } catch(e) {}
+    }
+    window.fetchInitialChat = fetchInitialChat;
+
     let _wsReconnectTimer = null;
     let _wsConnecting = false;
 
@@ -4282,6 +4330,7 @@
           fetchInitialMatches();
           fetchInitialTickets();
           fetchInitialGiveaway();
+          fetchInitialChat();
         };
         socket.onclose = () => {
           _wsConnecting = false;
@@ -4569,10 +4618,16 @@
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
+      appendChatMessage(msgObj, true);
+
       if (socket && socket.readyState === 1) {
         socket.send(JSON.stringify(msgObj));
       } else {
-        appendChatMessage(msgObj);
+        fetch('/api/send-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(msgObj)
+        }).catch(() => {});
       }
       input.value = '';
     }
@@ -5442,9 +5497,9 @@
     function loadLocalChatHistory() {
       try {
         const history = JSON.parse(localStorage.getItem('kd_chat_history') || '[]');
-        if (Array.isArray(history)) {
+        if (Array.isArray(history) && history.length > 0) {
           history.forEach(m => {
-            if (typeof appendChatMessage === 'function') appendChatMessage(m);
+            if (typeof appendChatMessage === 'function') appendChatMessage(m, false);
           });
         }
       } catch(e) {}
@@ -6282,22 +6337,13 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       if (!u) return showToast("Enter your username!", "error");
       const clean = u.toLowerCase().replace(/^@+/, '').trim();
 
-      // Check if user is banned locally immediately!
+      // Check if user is banned locally
       const localBan = checkUserIsBannedSync(clean);
       if (localBan) {
         closeAuthModal();
         showBannedBlockOverlay(localBan.reason);
         return;
       }
-      const localMute = checkUserIsMutedSync(clean);
-      if (localMute) {
-        showMutedBlockOverlay(localMute);
-      }
-
-      // Check if user is banned on backend (quick check)
-      const bBox = document.getElementById('authBannedBox');
-      const bReason = document.getElementById('authBannedReason');
-      if (bBox) bBox.style.display = 'none';
 
       // 1. ADMIN PASSWORD ACCOUNTS (emirwg, bennaref, 26ktricky) - Instant switch to password step
       if (clean === 'emirwg' || clean === 'bennaref' || clean === '26ktricky') {
@@ -6310,16 +6356,56 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
 
-      // 2. REGULAR USERS (Roblox description verification)
+      // 2. REGULAR USERS - Roblox Description Security Words Tutorial Card
       const btn = document.getElementById('btnNextStep');
       btn.innerHTML = `<span class="btn-spinner"></span> Checking...`;
       btn.disabled = true;
 
+      // Fallback word generator so it NEVER fails with connection error even if backend sleeps
+      const WORD_BANK = ["thursday", "tuesday", "heart", "plastic", "files", "fun", "galaxy", "banana", "dragon", "rocket", "crystal", "winter", "shadow", "legend"];
+      const localWords = [...WORD_BANK].sort(() => 0.5 - Math.random()).slice(0, 6).join(' ');
+
+      function showRobloxVerifyStep(userData, words) {
+        pendingAuthUser = userData;
+        generatedWords = words;
+
+        const authUserDisp = document.getElementById('authUsernameDisplay');
+        if (authUserDisp) authUserDisp.innerText = userData.username;
+
+        const rpDisplayname = document.getElementById('rpDisplayname');
+        if (rpDisplayname) rpDisplayname.innerText = userData.displayName || userData.username;
+
+        const rpUsername = document.getElementById('rpUsername');
+        if (rpUsername) rpUsername.innerText = `@${userData.username}`;
+
+        const avEl = document.getElementById('rpAvatarPreview');
+        if (avEl) {
+          avEl.src = getSafeAvatar(userData.avatar, userData.username);
+          avEl.onerror = function() { handleAvatarError(this, userData.username); };
+        }
+
+        const rpWords = document.getElementById('rpWordsInCard');
+        if (rpWords) rpWords.innerText = words;
+
+        const verifyWords = document.getElementById('verifyWordsDisplay');
+        if (verifyWords) verifyWords.innerText = words;
+
+        document.getElementById('step-username').style.display = 'none';
+        document.getElementById('step-verify').style.display = 'block';
+        document.getElementById('step-password').style.display = 'none';
+      }
+
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
         const res = await fetch("/api/start-auth", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: clean })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: clean }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         const data = await res.json();
         btn.innerHTML = `NEXT`; btn.disabled = false;
 
@@ -6329,36 +6415,21 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           return;
         }
 
-        if (data && data.success) {
-          pendingAuthUser = data.user;
-          generatedWords = data.words;
-          document.getElementById('authUsernameDisplay').innerText = data.user.username;
-          document.getElementById('rpDisplayname').innerText = data.user.displayName || data.user.username;
-          document.getElementById('rpUsername').innerText = `@${data.user.username}`;
-          const avEl = document.getElementById('rpAvatarPreview');
-          avEl.src = getSafeAvatar(data.user.avatar, data.user.username);
-          avEl.onerror = function() { handleAvatarError(this, data.user.username); };
-
-          // Security words display (Add phrase to Roblox 'About' description)
-          const wordsCont = document.getElementById('securityWordsContainer');
-          wordsCont.innerHTML = `
-            <div style="font-size:0.75rem; color:#94a3b8; font-weight:700; margin-bottom:6px;">Add this phrase to your Roblox 'About' description:</div>
-            <div style="background:#131b26; border:1.5px dashed #38bdf8; border-radius:10px; padding:12px; font-size:0.95rem; font-weight:900; color:#38bdf8; letter-spacing:0.5px; user-select:all; display:flex; align-items:center; justify-content:space-between;">
-              <span id="phraseText">${data.words}</span>
-              <button type="button" onclick="copyPhrase('${data.words}')" style="background:#1e293b; border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:5px 10px; font-size:0.75rem; font-weight:800; cursor:pointer;">Copy</button>
-            </div>
-          `;
-
-          document.getElementById('step-username').style.display = 'none';
-          document.getElementById('step-verify').style.display = 'block';
-          document.getElementById('step-password').style.display = 'none';
-        } else {
-          showToast(data?.message || "Failed to find Roblox user!", "error");
+        if (data && data.success && data.user && data.words) {
+          showRobloxVerifyStep(data.user, data.words);
+          return;
         }
-      } catch (e) {
-        btn.innerHTML = `NEXT`; btn.disabled = false;
-        showToast("Connection error. Please try again.", "error");
-      }
+      } catch (e) {}
+
+      // Resilient fallback: Server waking up or offline, display the tutorial card immediately
+      btn.innerHTML = `NEXT`; btn.disabled = false;
+      const fallbackUser = {
+        id: 'rbx_' + clean,
+        username: clean,
+        displayName: clean,
+        avatar: getSafeAvatar(null, clean)
+      };
+      showRobloxVerifyStep(fallbackUser, localWords);
     }
 
     async function handleVerify() {
@@ -7436,36 +7507,22 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     }
   </script>
 
-  <!-- MUTED FULLSCREEN BLOCKING OVERLAY -->
-  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#05070a; z-index:9999999 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
-    <div style="background:#111622; border:2px solid #f59e0b; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(245,158,11,0.25); box-sizing:border-box;">
-      <div style="font-size:3rem; margin-bottom:12px;">🔇</div>
-      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:8px; letter-spacing:-0.5px;">Your Muted</h1>
-      <div style="background:#1c1306; border:1px solid #78350f; border-radius:10px; padding:12px 16px; margin:16px 0; text-align:left;">
-        <div style="font-size:0.75rem; color:#f59e0b; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Reason:</div>
-        <div id="mutedReasonDisplay" style="font-size:0.95rem; font-weight:700; color:#fef3c7; word-break:break-word;"></div>
+  <!-- MUTED POPUP NOTIFICATION MODAL -->
+  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999998 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
+    <div style="background:#111622; border:2px solid #f59e0b; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(245,158,11,0.3); box-sizing:border-box; position:relative;">
+      <button onclick="hideMutedBlockOverlay()" style="position:absolute; top:14px; right:14px; background:#1e293b; border:none; color:#94a3b8; font-size:1.1rem; border-radius:50%; width:34px; height:34px; cursor:pointer; font-weight:800; display:flex; align-items:center; justify-content:center;">✕</button>
+      <div style="font-size:3rem; margin-bottom:10px;">🔇</div>
+      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:6px; letter-spacing:-0.5px;">You are Muted!</h1>
+      <div style="background:#1c1306; border:1px solid #78350f; border-radius:10px; padding:12px 16px; margin:14px 0 10px; text-align:left;">
+        <div style="font-size:0.75rem; color:#f59e0b; font-weight:800; text-transform:uppercase; margin-bottom:4px;">REASON:</div>
+        <div id="mutedOverlayReason" style="font-size:0.95rem; font-weight:700; color:#fef3c7; word-break:break-word;">Muted by administrator</div>
       </div>
-      <div style="background:#18202c; border:1px solid #334155; border-radius:10px; padding:12px 16px; margin-bottom:20px; text-align:left;">
-        <div style="font-size:0.75rem; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Remaining Duration:</div>
-        <div id="mutedDurationDisplay" style="font-size:1.1rem; font-weight:900; color:#38bdf8;"></div>
+      <div style="background:#18202c; border:1px solid #334155; border-radius:10px; padding:12px 16px; margin-bottom:16px; text-align:left;">
+        <div style="font-size:0.75rem; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">REMAINING DURATION:</div>
+        <div id="mutedOverlayExpiry" style="font-size:1.05rem; font-weight:900; color:#38bdf8;">Active Mute</div>
       </div>
-      <p style="font-size:0.78rem; color:#64748b; margin:0;">You cannot access the site until your mute duration expires.</p>
-    </div>
-  </div>
-
-  <!-- MUTED FULLSCREEN / POPUP BLOCKING OVERLAY -->
-  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:9999998 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
-    <div style="background:#181308; border:2px solid #f59e0b; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(245,158,11,0.3); box-sizing:border-box;">
-      <div style="font-size:3rem; margin-bottom:12px;">🔇</div>
-      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:8px; letter-spacing:-0.5px;">You are Muted!</h1>
-      <div style="background:#2d1e0a; border:1px solid #78350f; border-radius:10px; padding:12px 16px; margin:16px 0; text-align:left;">
-        <div style="font-size:0.75rem; color:#fde047; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Reason:</div>
-        <div id="mutedOverlayReason" style="font-size:0.95rem; font-weight:700; color:#fef08a; word-break:break-word; margin-bottom:8px;"></div>
-        <div style="font-size:0.75rem; color:#fde047; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Remaining Time:</div>
-        <div id="mutedOverlayExpiry" style="font-size:0.9rem; font-weight:700; color:#ffffff;"></div>
-      </div>
-      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:18px;">You cannot send chat messages until your mute expires.</p>
-      <button onclick="hideMutedBlockOverlay()" style="background:#f59e0b; color:#000; font-weight:900; border:none; border-radius:10px; padding:12px 24px; font-size:0.9rem; cursor:pointer;">I Understand</button>
+      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:18px; line-height:1.4;">You cannot send chat messages until your mute expires.<br>You can still play duels, coinflip, and use the site!</p>
+      <button onclick="hideMutedBlockOverlay()" style="width:100%; background:linear-gradient(135deg,#d97706,#f59e0b); color:#000; font-weight:900; border:none; border-radius:10px; padding:12px 24px; font-size:0.92rem; cursor:pointer; box-shadow:0 4px 16px rgba(245,158,11,0.35);">I Understand / Continue</button>
     </div>
   </div>
 
