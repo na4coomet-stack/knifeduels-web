@@ -283,8 +283,42 @@
     .result-popup-card { z-index: 1000006 !important; }
     .arena-duelists { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px; }
     .duelist-box { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; padding: 12px 8px; border-radius: 14px; background-color: #07090e; border: 2px solid #1e2634; transition: all 0.35s ease; }
-    .duelist-box.winner { border-color: #ffffff !important; box-shadow: 0 0 25px rgba(255,255,255,0.4); background-color: #171f2c; }
-    .duelist-box.loser { opacity: 0.35; border-color: #ef4444 !important; }
+    /* Winner and Loser Duelist Box Visual Polish */
+.duelist-box.winner {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.45) !important;
+  background-color: #0b1e16 !important;
+  opacity: 1 !important;
+}
+.duelist-box.loser {
+  border-color: #ef4444 !important;
+  box-shadow: none !important;
+  background-color: #180c10 !important;
+  opacity: 0.45 !important;
+}
+.duelist-result-tag {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+.duelist-result-tag.tag-winner {
+  display: inline-block;
+  background: rgba(34, 197, 94, 0.22);
+  color: #22c55e;
+  border: 1.5px solid #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+}
+.duelist-result-tag.tag-loser {
+  display: inline-block;
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  border: 1.5px solid #ef4444;
+}
     .duelist-avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; border: 2px solid #ffffff; background-color: #1a2230; }
     .duelist-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .duelist-name { font-size: 0.85rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95px; }
@@ -2058,6 +2092,7 @@
           <div class="duelist-name" id="arenaP1Name">Player 1</div>
           <span class="chip" id="arenaP1Chip">K</span>
           <div class="duelist-val" id="arenaP1Val">0 Val</div>
+          <div class="duelist-result-tag" id="arenaP1Tag"></div>
         </div>
         <div class="arena-vs">VS</div>
         <div class="duelist-box" id="boxPlayer2">
@@ -2065,6 +2100,7 @@
           <div class="duelist-name" id="arenaP2Name">Player 2</div>
           <span class="chip" id="arenaP2Chip">D</span>
           <div class="duelist-val" id="arenaP2Val">0 Val</div>
+          <div class="duelist-result-tag" id="arenaP2Tag"></div>
         </div>
       </div>
       <div class="coin-stage">
@@ -5076,8 +5112,9 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           renderMatches();
         }, 4300);
 
-        // 7. WebSocket ile sunucuya gonder
-        if (socket && socket.readyState === 1) {
+        // 7. WebSocket ile sunucuya gonder (Bagli degilse duelloyu guvenle yerel calistir)
+        const isWsConnected = Boolean(socket && socket.readyState === 1);
+        if (isWsConnected) {
           try {
             socket.send(JSON.stringify({
               type: 'join_match',
@@ -5086,6 +5123,11 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
               opponentItems: normChosenItems
             }));
           } catch (err) {}
+        } else {
+          const matchKey = String(joinedMatchCopy.id);
+          if (!handledDuelIds.has(matchKey) && (!window._finishedDuelIds || !window._finishedDuelIds.has(matchKey))) {
+            playDuel(joinedMatchCopy);
+          }
         }
 
         // 8. HTTP REST POST ile sunucuya daima kesin ulasmasini sagla
@@ -5107,9 +5149,6 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           }
         }).catch(() => {});
 
-        // 9. Katilan oyuncu icin arenada duelloyu calistir
-        playDuel(joinedMatchCopy);
-
         closeJoinMatchModal();
         renderMatches();
       }, 600);
@@ -5117,7 +5156,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     window.confirmExecuteJoinWager = confirmExecuteJoinWager;
 
     
-    function spectateDuel(duelOrId) {
+            function spectateDuel(duelOrId) {
       const duel = (typeof duelOrId === 'object')
         ? duelOrId
         : (matches.find(x => String(x.id) === String(duelOrId)) ||
@@ -5125,7 +5164,6 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
            getMySavedMatches().find(x => String(x.id) === String(duelOrId)));
       if (!duel) return showToast("Match not found!", "error");
 
-      // Kart üzerindeki mini coini de tekrar 3D döndür
       const cardCoin = document.getElementById('cardCoin_' + duel.id);
       if (cardCoin) {
         const wSide = String(duel.winnerSide || duel.side || 'K').toUpperCase().trim();
@@ -5161,8 +5199,15 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       document.getElementById('arenaP2Chip').innerText = oppSide;
       document.getElementById('arenaP2Chip').className = `chip ${oppSide === 'K' ? 'chip-black' : 'chip-white'}`;
 
-      document.getElementById('boxPlayer1').className = "duelist-box";
-      document.getElementById('boxPlayer2').className = "duelist-box";
+      const box1 = document.getElementById('boxPlayer1');
+      const box2 = document.getElementById('boxPlayer2');
+      box1.className = "duelist-box";
+      box2.className = "duelist-box";
+
+      const tag1 = document.getElementById('arenaP1Tag');
+      const tag2 = document.getElementById('arenaP2Tag');
+      if (tag1) { tag1.innerText = ''; tag1.className = 'duelist-result-tag'; }
+      if (tag2) { tag2.innerText = ''; tag2.className = 'duelist-result-tag'; }
 
       coin.className = "flipper-coin";
       coin.classList.remove('spin-k', 'spin-d');
@@ -5176,29 +5221,54 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
       setTimeout(() => {
         const creatorWon = (winnerSide === p1Side);
-        if (creatorWon) {
-          document.getElementById('boxPlayer1').classList.add('winner');
-          document.getElementById('boxPlayer2').classList.add('loser');
-          document.getElementById('bloxluckStatus').innerText = `${duel.creatorName} Won!`;
-        } else {
-          document.getElementById('boxPlayer2').classList.add('winner');
-          document.getElementById('boxPlayer1').classList.add('loser');
-          document.getElementById('bloxluckStatus').innerText = `${duel.opponent?.name || 'Opponent'} Won!`;
+        box1.className = "duelist-box " + (creatorWon ? "winner" : "loser");
+        box2.className = "duelist-box " + (creatorWon ? "loser" : "winner");
+
+        if (tag1) {
+          tag1.innerText = creatorWon ? "WINNER" : "LOSER";
+          tag1.className = "duelist-result-tag " + (creatorWon ? "tag-winner" : "tag-loser");
         }
+        if (tag2) {
+          tag2.innerText = creatorWon ? "LOSER" : "WINNER";
+          tag2.className = "duelist-result-tag " + (creatorWon ? "tag-loser" : "tag-winner");
+        }
+
+        const winnerDisplayName = creatorWon ? duel.creatorName : (duel.opponent?.name || 'Opponent');
+        document.getElementById('bloxluckStatus').innerText = `${winnerDisplayName} Won!`;
+
+        setTimeout(() => {
+          arena.style.display = "none";
+          coin.classList.remove('spin-k', 'spin-d');
+        }, 1800);
       }, 4200);
     }
-    window.spectateDuel = spectateDuel;
 
-function playDuel(duel) {
-      const myName = (currentUser?.name || "").toLowerCase();
-      const isCreator = myName === (duel.creatorName || "").toLowerCase();
-      const isOpponent = myName === (duel.opponent?.name || "").toLowerCase();
-      if (!isCreator && !isOpponent) return;
+    function playDuel(duel) {
+      if (!duel || !duel.id) return;
+      const dIdStr = String(duel.id);
+      if (window._currentlyPlayingDuelId === dIdStr) return;
+      if (!window._finishedDuelIds) window._finishedDuelIds = new Set();
+      if (window._finishedDuelIds.has(dIdStr)) return;
+
+      window._currentlyPlayingDuelId = dIdStr;
+      handledDuelIds.add(dIdStr);
+
+      const myName = (currentUser?.name || "").toLowerCase().trim();
+      const creatorClean = String(duel.creatorName || "").toLowerCase().trim();
+      const oppClean = String(duel.opponent?.name || "").toLowerCase().trim();
+
+      const isCreator = Boolean(myName && creatorClean === myName);
+      const isOpponent = Boolean(myName && oppClean === myName);
+      if (!isCreator && !isOpponent) {
+        window._currentlyPlayingDuelId = null;
+        return;
+      }
 
       closeCreateMatchModal();
       closeJoinMatchModal();
       const arena = document.getElementById('bloxluckArena');
       const coin = document.getElementById('flipperCoin');
+      if (!arena || !coin) return;
 
       document.getElementById('bloxluckStatus').innerText = "Rolling...";
       const p1Av = document.getElementById('arenaP1Avatar');
@@ -5223,32 +5293,28 @@ function playDuel(duel) {
       document.getElementById('arenaP2Chip').innerText = oppSide;
       document.getElementById('arenaP2Chip').className = `chip ${oppSide === 'K' ? 'chip-black' : 'chip-white'}`;
 
-      document.getElementById('boxPlayer1').className = "duelist-box";
-      document.getElementById('boxPlayer2').className = "duelist-box";
+      const box1 = document.getElementById('boxPlayer1');
+      const box2 = document.getElementById('boxPlayer2');
+      box1.className = "duelist-box";
+      box2.className = "duelist-box";
 
-      // Reset coin animations to prevent stuck coins
+      const tag1 = document.getElementById('arenaP1Tag');
+      const tag2 = document.getElementById('arenaP2Tag');
+      if (tag1) { tag1.innerText = ''; tag1.className = 'duelist-result-tag'; }
+      if (tag2) { tag2.innerText = ''; tag2.className = 'duelist-result-tag'; }
+
+      // Reset coin animations
       coin.className = "flipper-coin";
       coin.classList.remove('spin-k', 'spin-d');
       void coin.offsetWidth;
       arena.style.display = "flex";
 
-      // 6.5 saniyelik guvenlik zamanlayicisi (arena asla takilip kalmasin)
       if (window._arenaSafetyTimer) clearTimeout(window._arenaSafetyTimer);
       window._arenaSafetyTimer = setTimeout(() => {
         emergencyCloseArena();
       }, 6500);
 
-      // 50/50 Kriptografik Rastgelelik (Tamamen sansa bagli, asla 'K' tarafina kaymaz)
-      function getCryptographicFairCoin() {
-        if (window.crypto && window.crypto.getRandomValues) {
-          const buf = new Uint32Array(1);
-          window.crypto.getRandomValues(buf);
-          return (buf[0] % 2 === 0) ? 'K' : 'D';
-        }
-        return Math.random() < 0.5 ? 'K' : 'D';
-      }
-      const rawW = duel.winnerSide ? String(duel.winnerSide).toUpperCase().trim() : '';
-      const winnerSide = (rawW === 'K' || rawW === 'D') ? rawW : getCryptographicFairCoin();
+      const winnerSide = String(duel.winnerSide || p1Side).toUpperCase().trim();
       setTimeout(() => { 
         coin.classList.add(winnerSide === 'K' ? 'spin-k' : 'spin-d'); 
       }, 50);
@@ -5257,13 +5323,22 @@ function playDuel(duel) {
         if (window._arenaSafetyTimer) { clearTimeout(window._arenaSafetyTimer); window._arenaSafetyTimer = null; }
 
         const creatorWon = (winnerSide === p1Side);
-        if (creatorWon) {
-          document.getElementById('boxPlayer1').classList.add('winner');
-          document.getElementById('boxPlayer2').classList.add('loser');
-        } else {
-          document.getElementById('boxPlayer2').classList.add('winner');
-          document.getElementById('boxPlayer1').classList.add('loser');
+        
+        // KESIN VE TEKIL ATAMA: Biri daima yeşil WINNER, diğeri kırmızı LOSER
+        box1.className = "duelist-box " + (creatorWon ? "winner" : "loser");
+        box2.className = "duelist-box " + (creatorWon ? "loser" : "winner");
+
+        if (tag1) {
+          tag1.innerText = creatorWon ? "WINNER" : "LOSER";
+          tag1.className = "duelist-result-tag " + (creatorWon ? "tag-winner" : "tag-loser");
         }
+        if (tag2) {
+          tag2.innerText = creatorWon ? "LOSER" : "WINNER";
+          tag2.className = "duelist-result-tag " + (creatorWon ? "tag-loser" : "tag-winner");
+        }
+
+        const winnerDisplayName = creatorWon ? duel.creatorName : (duel.opponent?.name || 'Opponent');
+        document.getElementById('bloxluckStatus').innerText = `${winnerDisplayName} Won!`;
         
         if (winnerSide === 'K') {
           blackWins++;
@@ -5272,13 +5347,14 @@ function playDuel(duel) {
           whiteWins++;
           localStorage.setItem('kd_d_wins', whiteWins.toString());
         }
-        loadLocalChatHistory();
-      document.getElementById('blackCount').innerText = blackWins;
-        document.getElementById('whiteCount').innerText = whiteWins;
+        const bEl = document.getElementById('blackCount');
+        if (bEl) bEl.innerText = blackWins;
+        const wEl = document.getElementById('whiteCount');
+        if (wEl) wEl.innerText = whiteWins;
 
         const userWon = isCreator ? creatorWon : !creatorWon;
 
-        // Ganimeti eksiksiz garantile: Hem kurucu hem rakip esyalari birlestir
+        // Ganimet aktarımı
         let creatorLoot = duel.items || [];
         let oppLoot = duel.opponentItems || [];
         if (!oppLoot.length && window._lastJoinWagerBackup && window._lastJoinWagerBackup.items) {
@@ -5311,22 +5387,28 @@ function playDuel(duel) {
         duel.finishedAt = Date.now();
         duel.userWon = userWon;
         addPublicFinishedMatch(duel);
+        
         let userSaved = getMySavedMatches();
-        userSaved = userSaved.filter(m => m.id !== duel.id);
+        userSaved = userSaved.filter(m => m && String(m.id) !== String(duel.id));
         userSaved.unshift(duel);
         saveMySavedMatches(userSaved);
 
         setTimeout(() => {
           arena.style.display = "none";
           coin.classList.remove('spin-k', 'spin-d');
+          window._currentlyPlayingDuelId = null;
+          if (!window._finishedDuelIds) window._finishedDuelIds = new Set();
+          window._finishedDuelIds.add(dIdStr);
           openResultPopup(userWon, cleanMatchVal);
           renderMatches();
           renderInventory();
-        }, 1100);
+        }, 1200);
       }, 4200);
     }
 
     function openResultPopup(isWin, val) {
+      if (window._resultPopupShowing) return;
+      window._resultPopupShowing = true;
       const badge = document.getElementById('resIconBadge');
       const svgWin = document.getElementById('resSvgWin');
       const svgLose = document.getElementById('resSvgLose');
@@ -5350,6 +5432,7 @@ function playDuel(duel) {
       document.getElementById('resultPopup').style.display = 'flex';
     }
     function closeResultPopup() {
+      window._resultPopupShowing = false;
       document.getElementById('resultPopup').style.display = "none";
       renderMatches();
       renderInventory();
