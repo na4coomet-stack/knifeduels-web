@@ -3531,10 +3531,21 @@
               renderTicketTransactions();
             }
           } else if (data.type === 'match_created') {
-            if (!matches.some(m => m.id === data.match.id)) {
+            if (!matches.some(m => m && m.id === data.match.id)) {
               matches.unshift(data.match);
               renderMatches();
             }
+          } else if (data.type === 'match_finished' || data.type === 'match_ended') {
+            const finishedMatch = data.match || { id: data.matchId, winnerSide: data.winnerSide, winnerName: data.winnerName, status: 'finished' };
+            removeLocalOpenMatch(finishedMatch.id);
+            const mIdx = matches.findIndex(m => m && String(m.id) === String(finishedMatch.id));
+            if (mIdx !== -1) {
+              matches[mIdx] = { ...matches[mIdx], ...finishedMatch, status: 'finished' };
+            } else {
+              matches.unshift(finishedMatch);
+            }
+            addPublicFinishedMatch(matches[mIdx] || finishedMatch);
+            renderMatches();
           } else if (data.type === 'match_cancelled' || data.type === 'match_removed_public') {
             matches = matches.filter(m => m.id !== data.matchId);
             renderMatches();
@@ -4971,22 +4982,65 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         fullInventory = fullInventory.filter((_, i) => !usedIndices.has(i));
         filteredInventory = [...fullInventory];
         renderInventory();
-        syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
+        syncUserDataToServer(getStoredProfit());
+
+        // 50/50 Kazanan Belirleme
+        const winnerSide = Math.random() < 0.5 ? 'K' : 'D';
+        const p1Side = String(m.side || 'K').toUpperCase().trim();
+        const isCreatorWinner = (winnerSide === p1Side);
+        const winnerName = isCreatorWinner ? m.creatorName : currentUser.name;
 
         let joinedMatchCopy = {
           ...m,
           status: 'finished',
           opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
-          opponentItems: normChosenItems
+          opponentItems: normChosenItems,
+          winnerSide: winnerSide,
+          winnerName: winnerName,
+          finishedAt: Date.now()
         };
 
-        // Katılım onaylandığı anda maçı hemen 3D rolling durumuna al
+        // 1. Bu mac artik acik degil! Tum acik mac hafizalarindan aninda cikar
+        removeLocalOpenMatch(m.id);
+
+        // 2. Canli matches dizisinde maci aninda 'finished' yap
+        const mIdx = matches.findIndex(x => x && String(x.id) === String(m.id));
+        if (mIdx !== -1) {
+          matches[mIdx] = { ...matches[mIdx], ...joinedMatchCopy, status: 'finished' };
+        } else {
+          matches.unshift(joinedMatchCopy);
+        }
+        try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
+
+        // 3. Genel bitmis akisa kaydet
+        addPublicFinishedMatch(joinedMatchCopy);
+
+        // 4. Katilan oyuncunun (bennaref vb.) My Matches listesine ekle
+        let userSaved = getMySavedMatches();
+        userSaved = userSaved.filter(x => x && String(x.id) !== String(joinedMatchCopy.id));
+        userSaved.unshift(joinedMatchCopy);
+        saveMySavedMatches(userSaved);
+
+        // 5. AYNI CIHAZDA HESAP DEGISTIRME GUCLENDIRMESI:
+        // Kurucunun (emirwg vb.) yerel hafizasini da 'finished' olarak guncelle
+        // Boylece emirwg hesabina geri donuldugunde mac hala acik kalmaz, aninda sonuclanmis gorunur!
+        try {
+          const creatorClean = String(m.creatorName || '').toLowerCase().trim();
+          if (creatorClean) {
+            const creatorKey = 'kd_my_matches_' + creatorClean;
+            let cSaved = JSON.parse(localStorage.getItem(creatorKey) || '[]');
+            cSaved = cSaved.filter(x => x && String(x.id) !== String(joinedMatchCopy.id));
+            cSaved.unshift(joinedMatchCopy);
+            localStorage.setItem(creatorKey, JSON.stringify(cSaved));
+          }
+        } catch(e) {}
+
+        // 6. 3D Rolling Animasyonunu Baslat (4.3 saniye)
         if (!window._activeRollingDuels) window._activeRollingDuels = new Map();
         if (!window._rollingTimers) window._rollingTimers = {};
         if (window._rollingTimers[m.id]) clearTimeout(window._rollingTimers[m.id]);
-        const expectedWinner = String(m.winnerSide || m.side || 'K').toUpperCase().trim();
         window._activeRollingDuels.set(m.id, {
-          winnerSide: expectedWinner,
+          winnerSide: winnerSide,
           isRolling: true
         });
         window._rollingTimers[m.id] = setTimeout(() => {
@@ -4997,27 +5051,39 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           renderMatches();
         }, 4300);
 
-        let userSaved = getMySavedMatches();
-        userSaved = userSaved.filter(x => x.id !== joinedMatchCopy.id);
-        userSaved.unshift(joinedMatchCopy);
-        saveMySavedMatches(userSaved);
+        // 7. WebSocket ile sunucuya gonder
+        if (socket && socket.readyState === 1) {
+          try {
+            socket.send(JSON.stringify({
+              type: 'join_match',
+              matchId: m.id,
+              opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
+              opponentItems: normChosenItems
+            }));
+          } catch (err) {}
+        }
 
-        window._lastJoinWagerBackup = { matchId: m.id, items: normChosenItems };
-        try {
-          socket.send(JSON.stringify({
-            type: 'join_match',
+        // 8. HTTP REST POST ile sunucuya daima kesin ulasmasini sagla
+        fetch('/api/join-match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             matchId: m.id,
             opponent: { id: String(currentUser.id), name: currentUser.name, avatar: currentUser.avatar },
             opponentItems: normChosenItems
-          }));
-        } catch (err) {
-          fullInventory.push(...normChosenItems);
-          filteredInventory = [...fullInventory];
-          renderInventory();
-          syncUserDataToServer(parseInt(localStorage.getItem(getProfitStorageKey()) || '0', 10));
-          showToast("Connection error, items returned!", "error");
-          return;
-        }
+          })
+        }).then(r => r.json()).then(data => {
+          if (data && data.success && data.match) {
+            removeLocalOpenMatch(data.match.id);
+            const idx = matches.findIndex(x => x && String(x.id) === String(data.match.id));
+            if (idx !== -1) matches[idx] = data.match;
+            addPublicFinishedMatch(data.match);
+            renderMatches();
+          }
+        }).catch(() => {});
+
+        // 9. Katilan oyuncu icin arenada duelloyu calistir
+        playDuel(joinedMatchCopy);
 
         closeJoinMatchModal();
         renderMatches();
