@@ -4753,7 +4753,7 @@
       const chosenItems = [];
       const usedIndices = new Set();
       for (const id of chosenIds) {
-        const idx = fullInventory.findIndex((item, j) => item.id === id && !usedIndices.has(j));
+        const idx = fullInventory.findIndex((item, j) => String(item.id) === String(id) && !usedIndices.has(j));
         if (idx !== -1) {
           const item = fullInventory[idx];
           chosenItems.push({
