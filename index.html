@@ -277,7 +277,7 @@
     .modal-item-row-name { font-size: 0.95rem; font-weight: 900; color: #fff; font-style: italic; }
 
     .bloxluck-arena-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 7, 10, 0.96); backdrop-filter: blur(14px); justify-content: center; align-items: center; z-index: 1000000 !important; padding: 16px; }
-    .btn-close-arena { position: absolute; top: 16px; right: 16px; background: #1a2230; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; z-index: 1000005; transition: all 0.15s ease; }
+    .btn-close-arena { display: none !important; pointer-events: none !important; visibility: hidden !important; position: absolute; top: 16px; right: 16px; background: #1a2230; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; z-index: 1000005; transition: all 0.15s ease; }
     .btn-close-arena:hover { color: #ffffff; border-color: #ef4444; background: #450a0a; }
     .result-popup-overlay { z-index: 1000005 !important; }
     .result-popup-card { z-index: 1000006 !important; }
@@ -1694,17 +1694,17 @@
         <span>TOP</span>
       </div>
 
-      <div class="side-icon-item" id="sideTabAdminGive" style="display:none;" onclick="openVermeView(); closeSideNav();">
+      <div class="side-icon-item" id="sideTabAdminGive" style="display:none !important;" onclick="openVermeView(); closeSideNav();">
         <div class="side-icon-box" style="border-color:#a855f7; background:#1a0f2e;">🎁</div>
         <span style="color:#c084fc;">GIVE</span>
       </div>
 
-      <div class="side-icon-item" id="sideTabAdminValue" style="display:none;" onclick="openBrainrotValueView(); closeSideNav();">
+      <div class="side-icon-item" id="sideTabAdminValue" style="display:none !important;" onclick="openBrainrotValueView(); closeSideNav();">
         <div class="side-icon-box" style="border-color:#38bdf8; background:#082032;">💎</div>
         <span style="color:#38bdf8;">VALUES</span>
       </div>
 
-      <div class="side-icon-item" id="sideTabAdminMuteBan" style="display:none;" onclick="openMuteBanView(); closeSideNav();">
+      <div class="side-icon-item" id="sideTabAdminMuteBan" style="display:none !important;" onclick="openMuteBanView(); closeSideNav();">
         <div class="side-icon-box" style="border-color:#ef4444; background:#1e1010;">🛡️</div>
         <span style="color:#ef4444;">BAN/MUTE</span>
       </div>
@@ -1800,7 +1800,7 @@
         </div>
       </div>
 
-      <div id="vermeButtonWrapper" style="display:none; margin-bottom:14px; display:flex; flex-direction:column; gap:8px;">
+      <div id="vermeButtonWrapper" style="display:none !important; margin-bottom:14px; flex-direction:column; gap:8px;">
         <button onclick="openVermeView()" style="width:100%; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; font-weight:900; border:none; border-radius:10px; padding:12px; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 18px rgba(168,85,247,0.35);">
           🎁 Give System
         </button>
@@ -2122,7 +2122,7 @@
 
   <div class="bloxluck-arena-overlay" id="bloxluckArena">
     <div class="arena-main-card" style="position:relative;">
-      <button class="btn-close-arena" onclick="emergencyCloseArena()" title="Close Arena">✕</button>
+      <!-- Arena close button removed per request so nobody can close rolling duel -->
       <div style="font-size:0.8rem; font-weight:800; color:#64748b; margin-bottom:16px;">COINFLIP DUEL</div>
       <div class="arena-duelists">
         <div class="duelist-box" id="boxPlayer1">
@@ -2711,6 +2711,10 @@
     let bvSearchFilter = "";
 
     function openBrainrotValueView() {
+      if (!isUserAdmin()) {
+        showToast("⛔ Only @emirwg and @bennaref can access Value System!", "error");
+        return;
+      }
       hideAll();
       document.getElementById('brainrot-value-view').style.display = 'block';
       closeSideNav();
@@ -2832,6 +2836,10 @@
 
     // ===== MUTE & BAN MANAGER TABS & LOGIC =====
     function openMuteBanView() {
+      if (!isUserAdmin()) {
+        showToast("⛔ Only @emirwg and @bennaref can access Ban & Mute System!", "error");
+        return;
+      }
       hideAll();
       const el = document.getElementById('mute-ban-view');
       if (el) el.style.display = 'block';
@@ -3871,14 +3879,15 @@
       return clean;
     }
 
-    const ADMIN_ACCOUNTS = ['emirwg', 'bennaref', '26ktricky', 'admin'];
+    const ADMIN_ACCOUNTS = ['emirwg', 'bennaref'];
     window.ADMIN_ACCOUNTS = ADMIN_ACCOUNTS;
 
     function isUserAdmin(nameOrUser) {
-      if (!nameOrUser) return false;
-      let str = (typeof nameOrUser === 'object') ? (nameOrUser.name || nameOrUser.username || '') : String(nameOrUser);
+      const u = nameOrUser || (typeof currentUser !== 'undefined' && currentUser) || (typeof window !== 'undefined' && window.currentUser) || null;
+      if (!u) return false;
+      let str = (typeof u === 'object') ? (u.name || u.username || '') : String(u);
       str = str.toLowerCase().replace(/^@+/, '').trim();
-      return ADMIN_ACCOUNTS.some(a => a.toLowerCase().replace(/^@+/, '').trim() === str);
+      return (str === 'emirwg' || str === 'bennaref');
     }
     window.isUserAdmin = isUserAdmin;
 
@@ -6346,7 +6355,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       }
 
       // 1. ADMIN PASSWORD ACCOUNTS (emirwg, bennaref, 26ktricky) - Instant switch to password step
-      if (clean === 'emirwg' || clean === 'bennaref' || clean === '26ktricky') {
+      if (clean === 'emirwg' || clean === 'bennaref') {
         targetAdminUser = clean;
         document.getElementById('step-username').style.display = 'none';
         document.getElementById('step-verify').style.display = 'none';
@@ -6502,10 +6511,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         return;
       }
       const isEmirOrBenna = (u === 'emirwg' || u === 'bennaref');
-      const isTricky = (u === '26ktricky');
-      // SADECE knifeduels777 gecerli - diger tum eski sifreler  tamamen engellendi
-      const isValid = (isEmirOrBenna && p === 'knifeduels777') ||
-                      (isTricky && (p === 'yeah123' || p === 'knifeduels777'));
+      const isValid = isEmirOrBenna && p === 'knifeduels777';
       if (isValid) {
         let avatar = getSafeAvatar(null, u);
         try {
@@ -6532,13 +6538,41 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     function renderLoggedInState() {
       const isOwner = isUserAdmin(currentUser);
       const vermeBtn = document.getElementById('vermeButtonWrapper');
-      if (vermeBtn) vermeBtn.style.display = isOwner ? 'flex' : 'none';
+      if (vermeBtn) {
+        if (isOwner) {
+          vermeBtn.style.removeProperty('display');
+          vermeBtn.style.display = 'flex';
+        } else {
+          vermeBtn.style.setProperty('display', 'none', 'important');
+        }
+      }
       const sideAdminBtn = document.getElementById('sideTabAdminMuteBan');
-      if (sideAdminBtn) sideAdminBtn.style.display = isOwner ? 'flex' : 'none';
+      if (sideAdminBtn) {
+        if (isOwner) {
+          sideAdminBtn.style.removeProperty('display');
+          sideAdminBtn.style.display = 'flex';
+        } else {
+          sideAdminBtn.style.setProperty('display', 'none', 'important');
+        }
+      }
       const sideGiveBtn = document.getElementById('sideTabAdminGive');
-      if (sideGiveBtn) sideGiveBtn.style.display = isOwner ? 'flex' : 'none';
+      if (sideGiveBtn) {
+        if (isOwner) {
+          sideGiveBtn.style.removeProperty('display');
+          sideGiveBtn.style.display = 'flex';
+        } else {
+          sideGiveBtn.style.setProperty('display', 'none', 'important');
+        }
+      }
       const sideValueBtn = document.getElementById('sideTabAdminValue');
-      if (sideValueBtn) sideValueBtn.style.display = isOwner ? 'flex' : 'none';
+      if (sideValueBtn) {
+        if (isOwner) {
+          sideValueBtn.style.removeProperty('display');
+          sideValueBtn.style.display = 'flex';
+        } else {
+          sideValueBtn.style.setProperty('display', 'none', 'important');
+        }
+      }
       if (!currentUser) {
         const authC = document.getElementById('auth-container');
         if (authC) authC.innerHTML = '<button class="btn-login-nav" onclick="openAuthModal()">Log In</button>';
@@ -6985,6 +7019,10 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     window.closeMuteBanView = closeMuteBanView;
 
     function openVermeView() {
+      if (!isUserAdmin()) {
+        showToast("⛔ Only @emirwg and @bennaref can access Give System!", "error");
+        return;
+      }
       hideAll();
       document.getElementById('verme-view').style.display = 'block';
       closeSideNav();
