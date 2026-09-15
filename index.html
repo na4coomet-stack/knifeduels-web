@@ -1785,15 +1785,9 @@
         </div>
       </div>
 
-      <div id="vermeButtonWrapper" style="display:none; margin-bottom:14px; display:flex; flex-direction:column; gap:8px;">
-        <button onclick="openVermeView()" style="width:100%; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; font-weight:900; border:none; border-radius:10px; padding:12px; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 18px rgba(168,85,247,0.35);">
+      <div id="vermeButtonWrapper" style="display:none; margin-bottom:12px;">
+        <button onclick="openVermeView()" style="width:100%; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; font-weight:900; border:none; border-radius:10px; padding:13px; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(168,85,247,0.4);">
           🎁 Give System
-        </button>
-        <button onclick="openBrainrotValueView()" style="width:100%; background:linear-gradient(135deg,#2563eb,#38bdf8); color:#fff; font-weight:900; border:none; border-radius:10px; padding:12px; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 18px rgba(56,189,248,0.3);">
-          💎 Brainrot Value System
-        </button>
-        <button onclick="openMuteBanView()" style="width:100%; background:linear-gradient(135deg,#dc2626,#ef4444); color:#fff; font-weight:900; border:none; border-radius:10px; padding:12px; font-size:0.92rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 18px rgba(239,68,68,0.3);">
-          🛡️ Mute & Ban System
         </button>
       </div>
 
@@ -1882,10 +1876,6 @@
       
       <div id="step-username">
         <input type="text" id="robloxInput" class="auth-input-mono" placeholder="Roblox Username" autocomplete="off">
-        <div id="authBannedBox" style="display:none; margin:10px 0; background:#2d0a0a; border:1.5px solid #ef4444; border-radius:10px; padding:10px 14px; text-align:left;">
-          <div style="font-size:0.92rem; font-weight:900; color:#ef4444; margin-bottom:2px;">🚫 Your Banned!</div>
-          <div id="authBannedReason" style="font-size:0.8rem; font-weight:700; color:#fca5a5;"></div>
-        </div>
         <div class="blox-btn-row">
           <button class="btn-auth-cancel" onclick="closeAuthModal()">CANCEL</button>
           <button class="btn-auth-login" id="btnNextStep" onclick="handleUsernameSubmit()">NEXT</button>
@@ -2124,111 +2114,7 @@
   </div>
 
   
-  
-    <!-- BRAINROT VALUE MANAGER VIEW -->
-    <div id="brainrot-value-view" class="sub-view" style="display:none;">
-      <div class="verme-header-row">
-        <div class="verme-title">💎 Brainrot Value Manager</div>
-        <button onclick="closeBrainrotValueView()" style="background:#18202c; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 14px; font-size:0.82rem; font-weight:800; cursor:pointer;">← Back</button>
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
-        <input type="text" id="bvSearchInput" class="verme-search-input" placeholder="🔍 Search Brainrot to set value..." style="margin:0; flex:1;" oninput="handleBrainrotValueSearch()">
-        <button onclick="saveAllBrainrotValuesToServer()" id="btnSaveBvValues" style="background:linear-gradient(135deg,#2563eb,#38bdf8); color:#fff; font-weight:900; border:none; border-radius:10px; padding:10px 18px; font-size:0.85rem; cursor:pointer; flex-shrink:0; box-shadow:0 4px 15px rgba(56,189,248,0.35);">
-          💾 Save Values
-        </button>
-      </div>
-
-      <div id="bvStatsBar" style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px; font-weight:700;"></div>
-
-      <div id="bvListContainer" class="verme-items-list" style="max-height:68vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
-    </div>
-
-    <!-- MUTE & BAN MANAGER VIEW -->
-    <div id="mute-ban-view" class="sub-view" style="display:none;">
-      <div class="verme-header-row">
-        <div class="verme-title">🛡️ Mute & Ban Manager</div>
-        <button onclick="closeMuteBanView()" style="background:#18202c; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 14px; font-size:0.82rem; font-weight:800; cursor:pointer;">← Back</button>
-      </div>
-
-      <!-- Top Tab Switcher: BAN / MUTE vs UNBAN / UNMUTE -->
-      <div class="verme-tab-bar" style="margin-bottom:16px;">
-        <div id="tabMbAction" class="verme-tab active" onclick="switchMbTab('action')" style="cursor:pointer; flex:1; text-align:center;">
-          ⚡ Issue Ban / Mute
-        </div>
-        <div id="tabMbList" class="verme-tab" onclick="switchMbTab('list')" style="cursor:pointer; flex:1; text-align:center;">
-          🔓 Active Bans & Mutes (Unban / Unmute)
-        </div>
-      </div>
-
-      <!-- TAB 1: ISSUE PUNISHMENT -->
-      <div id="mbPanelAction" style="background:#111622; border:1.5px solid #1e293b; border-radius:14px; padding:18px; margin-bottom:20px;">
-        <div style="font-size:0.95rem; font-weight:900; color:#fff; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
-          <span>⚡ Ban & Mute Panel</span>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-          <div>
-            <label style="display:block; font-size:0.75rem; font-weight:800; color:#94a3b8; margin-bottom:4px;">Target Username (İsim)</label>
-            <input type="text" id="mbTargetUser" class="verme-search-input" placeholder="e.g. BadUser123" style="width:100%; margin:0; box-sizing:border-box;">
-          </div>
-          <div>
-            <label style="display:block; font-size:0.75rem; font-weight:800; color:#94a3b8; margin-bottom:4px;">Punishment Type</label>
-            <select id="mbTypeSelect" onchange="toggleMbDurationVisibility()" style="width:100%; height:42px; background:#0b0e14; border:1.5px solid #283346; color:#fff; border-radius:10px; padding:8px 12px; font-weight:800; font-size:0.85rem; box-sizing:border-box;">
-              <option value="ban">🚫 Ban (Direk Hesaptan Atar, Girişi Engeller)</option>
-              <option value="mute">🔇 Mute (Siteye Giremez, Süreli)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-          <div>
-            <label style="display:block; font-size:0.75rem; font-weight:800; color:#94a3b8; margin-bottom:4px;">Reason (Sebep)</label>
-            <input type="text" id="mbReasonInput" class="verme-search-input" placeholder="e.g. Toxic behavior / scamming" style="width:100%; margin:0; box-sizing:border-box;">
-          </div>
-          <div id="mbDurationWrap" style="display:none;">
-            <label style="display:block; font-size:0.75rem; font-weight:800; color:#94a3b8; margin-bottom:4px;">Duration (Süre)</label>
-            <select id="mbDurationSelect" style="width:100%; height:42px; background:#0b0e14; border:1.5px solid #283346; color:#fff; border-radius:10px; padding:8px 12px; font-weight:800; font-size:0.85rem; box-sizing:border-box;">
-              <option value="10">10 Minutes</option>
-              <option value="30">30 Minutes</option>
-              <option value="60" selected>1 Hour</option>
-              <option value="180">3 Hours</option>
-              <option value="720">12 Hours</option>
-              <option value="1440">24 Hours (1 Day)</option>
-              <option value="4320">3 Days</option>
-              <option value="10080">7 Days (1 Week)</option>
-              <option value="43200">30 Days (1 Month)</option>
-            </select>
-          </div>
-        </div>
-
-        <button onclick="executeAdminPunishment()" id="btnSubmitPunish" style="width:100%; background:linear-gradient(135deg,#dc2626,#ef4444); color:#fff; font-weight:900; border:none; border-radius:10px; padding:13px; font-size:0.95rem; cursor:pointer; box-shadow:0 4px 15px rgba(239,68,68,0.35);">
-          🚫 Execute Ban
-        </button>
-      </div>
-
-      <!-- TAB 2: ACTIVE PUNISHMENTS & UNBAN / UNMUTE -->
-      <div id="mbPanelList" style="display:none;">
-        <div style="background:#111622; border:1.5px solid #1e293b; border-radius:14px; padding:16px; margin-bottom:16px;">
-          <label style="display:block; font-size:0.78rem; font-weight:800; color:#94a3b8; margin-bottom:6px;">Quick Unlock (Unban or Unmute by Username)</label>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="mbQuickUnlockInput" class="verme-search-input" placeholder="Enter username to unban / unmute..." style="margin:0; flex:1;">
-            <button onclick="executeQuickUnlock()" style="background:#1e3a5f; border:1px solid #38bdf8; color:#38bdf8; font-weight:900; border-radius:10px; padding:0 18px; font-size:0.85rem; cursor:pointer;">
-              🔓 Unlock
-            </button>
-          </div>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="font-size:0.95rem; font-weight:900; color:#fff;">Active Bans & Mutes</div>
-          <button onclick="loadAndRenderMuteBanPanels()" style="background:#18202c; border:1px solid #334155; color:#cbd5e1; border-radius:6px; padding:5px 12px; font-size:0.75rem; font-weight:800; cursor:pointer;">🔄 Refresh</button>
-        </div>
-
-        <div id="mbActiveList" style="display:flex; flex-direction:column; gap:10px;"></div>
-      </div>
-    </div>
-
-    <!-- USER PROFILE MODAL (IMAGE 22 BLOXYBET STYLE) -->
+  <!-- USER PROFILE MODAL (IMAGE 22 BLOXYBET STYLE) -->
   <div class="user-profile-overlay" id="userProfileModal">
     <div class="user-profile-card-bloxy">
       <button class="btn-close" onclick="closeUserProfileModal()" style="position:absolute; top:16px; right:16px;">✕</button>
@@ -2528,7 +2414,6 @@
   "Spaghetti Tualetti": 1000,
   "Spooky and Pumpky": 100000
 };
-    window.BRAINROT_VALUES = BRAINROT_VALUES;
     const MASTER_SECRETS_CATALOG = ["Jackorilla", "Sammyni Spyderini", "Los Matteos", "Karkerkar Kurkur", "Bisonte Giuppitere", "La Vacca Saturno Saturnita", "Trenostruzzo Turbo 4000", "Torrtuginni Dragonfrutini", "Dul Dul Dul", "Blackhole Goat", "Chachechi", "Agarrini la Palini", "Los Spyderinis", "Extinct Tralalero", "La Cucaracha", "Zombie Tralala", "Los Tortus", "Vulturino Skeletono", "Los Tralaleritos", "Boatito Auratito", "Guerriro Digitale", "Yess my Examen", "La Vacca Prese Presente", "Reindeer Tralala", "La Karkerkar Combinasion", "Extinct Matteo", "Pumpkini Spyderini", "Rocco Disco", "Las Tralaleritas", "Frankentteo", "Los Trios", "Job Job Job Sahur", "Karker Sahur", "Los Karkeritos", "Las Vaquitas Saturnitas", "Santteo", "Fishboard", "La Vacca Jacko Linterino", "Buntteo", "Triplito Tralaleritos", "Trickolino", "Paradiso Axolottino", "GOAT", "Honey Honey Narwhal", "Giftini Spyderini", "Perrito Burrito", "Love Love Love Sahur", "Graipuss Medussi", "Bombardiro Vaccariro", "La Vacca Lepre Lepreino", "1x1x1x1", "Los Cucarachas", "Hippo Golazo", "Easter Easter Easter Sahur", "Please my Present", "Craburger", "Cuadramat and Pakrahmatmamat", "Gelato Lumacho", "Bunnyman", "Los Jobcitos", "Berryno", "Nooo My Hotspot", "List List List Sahur", "Telemorte", "La Sahur Combinasion", "Yess My Resume", "Bunny Bunny Bunny Sahur", "Toro Españolo", "To to to Sahur", "Los Sigmas", "Glaciator", "Gelatina Volatina", "Pirulitoita Bicicleteira", "25", "Pot Hotspot", "Santa Hotspot", "Ref Ref Ref Sahur", "Horegini Boom", "Buho De Volto", "Naughty Naughty", "Pot Pumpkin", "Rocketini Frostini", "Bunito Bunito Spinito", "Quesadilla Crocodila", "Cupid Cupid Sahur", "Los Cornis", "Rosatops Triceratino", "Ho Ho Ho Sahur", "Mi Gatito", "Octoball", "Eid Eid Eid Sahur", "Cupid Hotspot", "Quesadillo Vampiro", "Brunito Marsito", "Chicleteira Bicicleteira", "Flancito", "4th Bros", "Luck Luck Luck Sahur", "Chill Puppy", "Burrito Bandito", "Granny", "Chicleteirina Bicicleteirina", "Aquarino", "Los Bunitos", "Futbolini Skatini", "Los Quesadillas", "Noo my Candy", "Gub", "Arcadopus", "Var Var Var", "Serafinna Medusella", "Los Nooo My Hotspotsitos", "Noo my Present", "Flipa Sandala", "Rang Ring Bus", "Los Mi Gatitos", "Ombrello Topolino", "Strawberrita", "Syrup Samurai", "Burrito Bat", "Noo my Eggs", "Los Chicleteiras", "Donkeyturbo Express", "John Doe", "67", "Sir Mangus", "Sushi Inu", "Los Burritos", "Los 25", "Conetto Morsetto", "La Grande Combinasion", "Tacorillo Crocodillo", "Pogo Pogo Penguin", "Mariachi Corazoni", "Swag Soda", "Noo my Heart", "Noo my Gold", "Chimnino", "Gattino Hydrantino", "Chicleteira Noelteira", "Nuclearo Dinossauro", "Los Combinasionas", "Bananito", "Chicleteira Surfeiteira", "Baskito", "Los Sweethearts", "Tacorita Bicicleta", "Motorino Bumbino", "Camera Ramena", "Spinny Hammy", "Las Sis", "Chicleteira Cupideira", "DJ Panda", "Girafini Raftini", "Los Planitos", "Snailo Clovero", "Chicleteira Champeona", "Peschito Machito", "Los Hotspotsitos", "Los Spooky Combinasionas", "Los Jolly Combinasionas", "Frullato Framingo", "Cigno Fulgoro", "Churrito Bunnito", "Money Money Puggy", "Los Mobilis", "Capitano Gullini", "Los 67", "Celularcini Viciosini", "Los Fruits", "Los Candies", "La Extinct Grande", "Los Bros", "Bacuru and Egguru", "La Spooky Grande", "Chillin Chili", "Chipso and Queso", "Money Money Reindeer", "Mieteteira Bicicleteira", "Tuff Toucan", "Tacoturbo Tacorito", "Tralaledon", "Globa Steppa", "Gobblino Uniciclino", "Noodle Noodle Poodle", "Los Puggies", "W or L", "Los Cupids", "La Jolly Grande", "Los Mariachis", "Sand Sand Sand", "Esok Sekolah", "Los Primos", "Puffino Builderino", "Eviledon", "Honey Honey Bear", "Bufalino Boomberino", "Los Tacoritas", "Lovin Rose", "Fragola La La La", "Esok Goala", "Noo my Examen", "Noo my Resume", "Abyssaloco", "Coco and Mango", "Tang Tang Keletang", "La Taco Combinasion", "Dug dug dug", "Ketupat Kepat", "Tictac Sahur", "La Romantic Grande", "La Lucky Grande", "Orcaledon", "Swaggy Bros", "Los Tangcitos", "Gym Bros", "Tirilikalika Tirilikalako", "Ketchuru and Musturu", "Rico Dinero", "Jolly Jolly Sahur", "Gold Gold Gold", "Lavadorito Spinito", "Money Money Bros", "Scorpino Coasterino", "Nachorilla", "Nacho Spyder", "La Anniversary Grande", "Rosetti Tualetti", "Garama and Madundung", "La Easter Grande", "Steakini Fattini", "Caylusaurus", "Hopilikalika Hopilikalako", "Polaroidini", "Candini Fluffini", "Los Tictacs", "Cloverat Clapat", "La Summer Grande", "Spaghetti Tualetti", "Grabatron", "Pop Pop Petalini", "Quackini Snackini", "Queen Bee", "Ventoliero Pavonero", "Guest 666", "Festive 67", "Examen Bros", "Rubrikiko", "Los Spaghettis", "Sammyni Fattini", "Bearito Cabinito", "Capitano Americano", "Rubiko and Kubiko", "La Ginger Sekolah", "Los Chillis", "Los Hackers", "Ginger Gerat", "Cangurato Gelato", "Spooky and Pumpky", "Boppin Bunny", "Sammyni Cakini", "S'more Serat", "Yetimatic", "Duggy Bros", "La Food Combinasion", "Los Admins", "La Fuse Machine", "La Casa Boo", "Fragrama and Chocrama", "Cash or Card", "Sammyni Truckini", "Los Sekolahs", "Foxini Lanternini", "Kalika Bros", "Fishino Clownino", "Antonio", "La Secret Combinasion", "Pancake and Syrup", "Fortunu and Cashuru", "Los Amigos", "Pizza and Ranch", "Reinito Sleighito", "Ketupat Bros", "Los Secret Combinasionas", "Burguro and Fryuro", "Cooki and Milki", "Orchidox", "Capitano Moby", "La Breakfast Combinasion", "Rosey and Teddy", "Bunny and Eggy", "Popcuru and Fizzuru", "Bumbatron", "Venuspino", "Jelly Moby", "Cerberus", "Celestial Pegasus", "Hydra Bunny", "Elefanto Frigo", "La Supreme Combinasion", "Digi Narwhal", "Kraken", "Arcadragon", "Love Love Bear", "Moby Bros", "Dragon Cannellloni", "Signore Carapace", "Hydra Dragon Cannelloni", "Dragon Gingerini", "Dragon Aquanini", "Griffin", "Deputy Leopard", "Panda Popanda", "Gold and Diamond", "Chicli Chicla", "Chimpanzini Spiderini", "Coffin Tung Tung Tung Sahur", "Duo Brainrots", "Flappin Clover", "Gold Egg", "Gold Elf", "Ice Dragon", "Karkerkur Family", "La Craft Machine", "Sawa Esok", "Leprotteo", "Guerriero Musicale", "Luck Luck Sahur", "Tax Tax Tax Sahur", "89", "Los Dragons", "Dragon Cannelloni"];
     let vermeCatalogSearchFilter = "";
 
@@ -2642,382 +2527,6 @@
     let selectedTipItemId = null;
     let tipCountdownInterval = null;
 
-// ===== BRAINROT VALUE MANAGER (ADMIN) =====
-    let editingBrainrotValues = {};
-    let bvSearchFilter = "";
-
-    function openBrainrotValueView() {
-      hideAll();
-      document.getElementById('brainrot-value-view').style.display = 'block';
-      closeSideNav();
-      editingBrainrotValues = { ...BRAINROT_VALUES };
-      bvSearchFilter = "";
-      const sInput = document.getElementById('bvSearchInput');
-      if (sInput) sInput.value = "";
-      renderBrainrotValueManager();
-    }
-
-    function closeBrainrotValueView() {
-      document.getElementById('brainrot-value-view').style.display = 'none';
-      document.getElementById('inventory-view').style.display = 'block';
-    }
-
-    function handleBrainrotValueSearch() {
-      const input = document.getElementById('bvSearchInput');
-      bvSearchFilter = (input?.value || '').toLowerCase().trim();
-      const listEl = document.getElementById('bvListContainer');
-      if (listEl) {
-        listEl.innerHTML = renderBrainrotValueItemsOnly();
-      }
-    }
-
-    function setTempBvValue(name, val) {
-      const num = Math.max(0, parseInt(val, 10) || 0);
-      editingBrainrotValues[name] = num;
-      updateBvStatsBar();
-    }
-
-    function updateSingleBvDisplay(encName, val) {
-      const num = Math.max(0, parseInt(val, 10) || 0);
-      const disp = document.getElementById('bv_disp_' + encName);
-      if (disp) {
-        disp.innerHTML = num > 0 ? `Value: ${num.toLocaleString()}` : `<span style="color:#ef4444; font-weight:900;">Not Value (0)</span>`;
-      }
-    }
-
-    function updateBvStatsBar() {
-      const statsBar = document.getElementById('bvStatsBar');
-      if (!statsBar) return;
-      const totalCatalog = (typeof MASTER_SECRETS_CATALOG !== 'undefined') ? MASTER_SECRETS_CATALOG.length : 0;
-      const valuedCount = Object.values(editingBrainrotValues).filter(v => v > 0).length;
-      const notValCount = totalCatalog - valuedCount;
-      statsBar.innerHTML = `📊 <b>${valuedCount}</b> brainrots with value &nbsp;|&nbsp; <span style="color:#ef4444;"><b>${notValCount}</b> Not Value (0)</span> &nbsp;|&nbsp; Total <b>${totalCatalog}</b>`;
-    }
-
-    function renderBrainrotValueItemsOnly() {
-      let list = (typeof MASTER_SECRETS_CATALOG !== 'undefined') ? [...MASTER_SECRETS_CATALOG] : Object.keys(editingBrainrotValues);
-      if (bvSearchFilter) {
-        list = list.filter(n => n.toLowerCase().includes(bvSearchFilter));
-      }
-      if (!list.length) {
-        const safeQ = String(bvSearchFilter).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return `<div class="verme-empty" style="padding:30px 0; color:#94a3b8; text-align:center;">No brainrots match "${safeQ}".</div>`;
-      }
-
-      return list.map(name => {
-        const val = (editingBrainrotValues[name] !== undefined) ? editingBrainrotValues[name] : (getItemCanonicalValue({ name }) || 0);
-        const nameSafe = name.replace(/'/g, "\\'");
-        const imgUrl = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(name.replace(/ /g, '_'))}.png`;
-        const encName = encodeURIComponent(name);
-        return `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#0c1017; border:1.5px solid #1e2634; border-radius:12px; gap:12px; box-sizing:border-box;">
-          <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
-            <div style="width:44px; height:44px; min-width:44px; border-radius:10px; overflow:hidden; background:#18202c; border:1px solid #283346; flex-shrink:0;">
-              <img src="${imgUrl}" referrerpolicy="no-referrer" onerror="handleImgError(this,'${nameSafe}')" style="width:100%; height:100%; object-fit:cover; display:block;">
-            </div>
-            <div style="min-width:0; flex:1;">
-              <div style="font-size:0.92rem; font-weight:900; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
-              <div id="bv_disp_${encName}" style="font-size:0.76rem; font-weight:800; color:${val > 0 ? '#38bdf8' : '#ef4444'}; margin-top:2px;">
-                ${val > 0 ? 'Value: ' + val.toLocaleString() : '<span style="color:#ef4444; font-weight:900;">Not Value (0)</span>'}
-              </div>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            <input type="number" id="bv_val_${encName}" min="0" value="${val}" placeholder="0 = Not Val"
-              oninput="setTempBvValue('${nameSafe}', this.value); updateSingleBvDisplay('${encName}', this.value);"
-              style="width:130px; height:40px; background:#07090e; border:1.5px solid #334155; color:#fff; border-radius:8px; padding:0 10px; font-weight:900; font-size:0.9rem; text-align:right; box-sizing:border-box;">
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    function renderBrainrotValueManager() {
-      updateBvStatsBar();
-      const listEl = document.getElementById('bvListContainer');
-      if (listEl) {
-        listEl.innerHTML = renderBrainrotValueItemsOnly();
-      }
-    }
-
-    async function saveAllBrainrotValuesToServer() {
-      const btn = document.getElementById('btnSaveBvValues');
-      if (btn) { btn.disabled = true; btn.innerText = "⏳ Saving..."; }
-
-      // 1. Immediately apply locally in memory and in localStorage so site instantly updates
-      Object.assign(BRAINROT_VALUES, editingBrainrotValues);
-      try {
-        localStorage.setItem('kd_custom_brainrot_values', JSON.stringify(editingBrainrotValues));
-      } catch(e) {}
-      fullInventory.forEach(i => { i.value = getItemCanonicalValue(i); });
-      renderInventory();
-
-      // 2. Persist to server in background
-      try {
-        fetch('/api/admin/update-brainrot-values', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ values: editingBrainrotValues })
-        }).catch(() => {});
-      } catch (e) {}
-
-      showToast("💎 Brainrot values saved and applied across site!", "success");
-      if (btn) { btn.disabled = false; btn.innerText = "💾 Save Values"; }
-      renderBrainrotValueManager();
-    }
-
-    // ===== MUTE & BAN MANAGER TABS & LOGIC =====
-    let activeMbTab = 'action';
-
-    function switchMbTab(tab) {
-      activeMbTab = tab;
-      const tabAction = document.getElementById('tabMbAction');
-      const tabList = document.getElementById('tabMbList');
-      const panelAction = document.getElementById('mbPanelAction');
-      const panelList = document.getElementById('mbPanelList');
-
-      if (tab === 'action') {
-        if (tabAction) tabAction.className = 'verme-tab active';
-        if (tabList) tabList.className = 'verme-tab';
-        if (panelAction) panelAction.style.display = 'block';
-        if (panelList) panelList.style.display = 'none';
-      } else {
-        if (tabAction) tabAction.className = 'verme-tab';
-        if (tabList) tabList.className = 'verme-tab active';
-        if (panelAction) panelAction.style.display = 'none';
-        if (panelList) panelList.style.display = 'block';
-        loadAndRenderMuteBanPanels();
-      }
-    }
-
-    function toggleMbDurationVisibility() {
-      const type = document.getElementById('mbTypeSelect').value;
-      const wrap = document.getElementById('mbDurationWrap');
-      const btn = document.getElementById('btnSubmitPunish');
-      if (wrap) wrap.style.display = (type === 'mute') ? 'block' : 'none';
-      if (btn) {
-        btn.innerText = (type === 'ban') ? "🚫 Execute Ban" : "🔇 Execute Mute";
-        btn.style.background = (type === 'ban') ? "linear-gradient(135deg,#dc2626,#ef4444)" : "linear-gradient(135deg,#d97706,#f59e0b)";
-      }
-    }
-
-    function getLocalPunishments() {
-      try {
-        const p = JSON.parse(localStorage.getItem('kd_punishments_data') || '{"mutes":[],"bans":[]}');
-        return p;
-      } catch(e) {
-        return { mutes: [], bans: [] };
-      }
-    }
-
-    function saveLocalPunishments(p) {
-      try {
-        localStorage.setItem('kd_punishments_data', JSON.stringify(p));
-      } catch(e) {}
-    }
-
-    async function loadAndRenderMuteBanPanels() {
-      const list = document.getElementById('mbActiveList');
-      if (!list) return;
-
-      let mutes = [];
-      let bans = [];
-
-      try {
-        const res = await fetch(`/api/admin/punishments?t=${Date.now()}`);
-        const data = await res.json();
-        if (data && data.success && (Array.isArray(data.mutes) || Array.isArray(data.bans))) {
-          mutes = data.mutes || [];
-          bans = data.bans || [];
-          saveLocalPunishments({ mutes, bans });
-        } else {
-          const loc = getLocalPunishments();
-          mutes = loc.mutes || [];
-          bans = loc.bans || [];
-        }
-      } catch(e) {
-        const loc = getLocalPunishments();
-        mutes = loc.mutes || [];
-        bans = loc.bans || [];
-      }
-
-      // Filter expired mutes
-      const now = Date.now();
-      mutes = mutes.filter(m => m.expiresAt > now);
-
-      if (!mutes.length && !bans.length) {
-        list.innerHTML = `<div class="verme-empty" style="padding:28px 0; text-align:center; color:#64748b;">No active bans or mutes.</div>`;
-        return;
-      }
-
-      let htmlRows = '';
-      if (bans.length > 0) {
-        htmlRows += `<div style="font-size:0.8rem; font-weight:900; color:#ef4444; margin-top:4px;">🚫 BANNED USERS (${bans.length})</div>`;
-        bans.forEach(b => {
-          htmlRows += `
-          <div style="background:#180a0d; border:1px solid #ef4444; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <div>
-              <div style="font-size:0.92rem; font-weight:900; color:#fff;">@${escapeHtml(b.username)}</div>
-              <div style="font-size:0.78rem; color:#fca5a5; margin-top:2px;">Reason: <b>${escapeHtml(b.reason)}</b></div>
-              <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">Issued by @${escapeHtml(b.issuedBy || 'Admin')}</div>
-            </div>
-            <button onclick="executeAdminUnban('${escapeHtml(b.username)}')" style="background:#dc2626; border:none; color:#fff; border-radius:8px; padding:8px 16px; font-size:0.82rem; font-weight:900; cursor:pointer; flex-shrink:0;">
-              UNBAN
-            </button>
-          </div>`;
-        });
-      }
-
-      if (mutes.length > 0) {
-        htmlRows += `<div style="font-size:0.8rem; font-weight:900; color:#f59e0b; margin-top:10px;">🔇 MUTED USERS (${mutes.length})</div>`;
-        mutes.forEach(m => {
-          const remMs = Math.max(0, (m.expiresAt || 0) - now);
-          const remMins = Math.ceil(remMs / 60000);
-          htmlRows += `
-          <div style="background:#181207; border:1px solid #f59e0b; border-radius:10px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <div>
-              <div style="font-size:0.92rem; font-weight:900; color:#fff;">
-                @${escapeHtml(m.username)} <span style="font-size:0.75rem; color:#38bdf8; font-weight:800;">(${remMins}m remaining)</span>
-              </div>
-              <div style="font-size:0.78rem; color:#fde68a; margin-top:2px;">Reason: <b>${escapeHtml(m.reason)}</b></div>
-              <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">Issued by @${escapeHtml(m.issuedBy || 'Admin')}</div>
-            </div>
-            <button onclick="executeAdminUnmute('${escapeHtml(m.username)}')" style="background:#d97706; border:none; color:#fff; border-radius:8px; padding:8px 16px; font-size:0.82rem; font-weight:900; cursor:pointer; flex-shrink:0;">
-              UNMUTE
-            </button>
-          </div>`;
-        });
-      }
-
-      list.innerHTML = htmlRows;
-    }
-
-    async function executeAdminPunishment() {
-      const targetUser = (document.getElementById('mbTargetUser')?.value || '').replace(/^@+/, '').trim();
-      const type = document.getElementById('mbTypeSelect')?.value || 'ban';
-      const reason = (document.getElementById('mbReasonInput')?.value || '').trim() || (type === 'ban' ? 'Banned by admin' : 'Muted by admin');
-      const durationMins = parseInt(document.getElementById('mbDurationSelect')?.value || '60', 10);
-
-      if (!targetUser) return showToast("Enter a target username!", "error");
-      const cleanTarget = targetUser.toLowerCase();
-
-      // 1. Immediate local save to guarantee it works even if backend is sleeping
-      const loc = getLocalPunishments();
-      if (type === 'ban') {
-        loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase() !== cleanTarget);
-        loc.bans.unshift({
-          username: targetUser,
-          reason,
-          issuedBy: currentUser ? currentUser.name : 'Admin',
-          issuedAt: Date.now()
-        });
-      } else {
-        loc.mutes = (loc.mutes || []).filter(m => m.username.toLowerCase() !== cleanTarget);
-        loc.mutes.unshift({
-          username: targetUser,
-          reason,
-          durationMinutes: durationMins,
-          issuedBy: currentUser ? currentUser.name : 'Admin',
-          issuedAt: Date.now(),
-          expiresAt: Date.now() + durationMins * 60 * 1000
-        });
-      }
-      saveLocalPunishments(loc);
-
-      // 2. Broadcast via WebSocket if connected
-      if (socket && socket.readyState === 1) {
-        if (type === 'ban') {
-          socket.send(JSON.stringify({ type: 'user_banned', targetUser: targetUser, reason }));
-        } else {
-          socket.send(JSON.stringify({
-            type: 'user_muted',
-            targetUser: targetUser,
-            mute: { username: targetUser, reason, expiresAt: Date.now() + durationMins * 60 * 1000 }
-          }));
-        }
-      }
-
-      // 3. Post to backend server in background
-      const endpoint = (type === 'ban') ? '/api/admin/ban' : '/api/admin/mute';
-      try {
-        fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: targetUser,
-            reason,
-            durationMinutes: durationMins,
-            issuedBy: currentUser ? currentUser.name : 'Admin'
-          })
-        }).catch(() => {});
-      } catch (e) {}
-
-      showToast(`✅ @${targetUser} has been ${type === 'ban' ? 'BANNED' : 'MUTED'}!`, "success");
-      document.getElementById('mbTargetUser').value = '';
-      document.getElementById('mbReasonInput').value = '';
-
-      // Switch to list tab to see it
-      switchMbTab('list');
-    }
-
-    async function executeAdminUnban(username) {
-      if (!confirm(`Are you sure you want to unban @${username}?`)) return;
-      const clean = username.toLowerCase().trim();
-      const loc = getLocalPunishments();
-      loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase().trim() !== clean);
-      saveLocalPunishments(loc);
-
-      if (socket && socket.readyState === 1) {
-        socket.send(JSON.stringify({ type: 'user_unbanned', targetUser: username }));
-      }
-      try {
-        fetch('/api/admin/unban', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        }).catch(() => {});
-      } catch(e) {}
-
-      showToast(`✅ @${username} has been unbanned!`, "success");
-      loadAndRenderMuteBanPanels();
-    }
-
-    async function executeAdminUnmute(username) {
-      if (!confirm(`Are you sure you want to unmute @${username}?`)) return;
-      const clean = username.toLowerCase().trim();
-      const loc = getLocalPunishments();
-      loc.mutes = (loc.mutes || []).filter(m => m.username.toLowerCase().trim() !== clean);
-      saveLocalPunishments(loc);
-
-      if (socket && socket.readyState === 1) {
-        socket.send(JSON.stringify({ type: 'user_unmuted', targetUser: username }));
-      }
-      try {
-        fetch('/api/admin/unmute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        }).catch(() => {});
-      } catch(e) {}
-
-      showToast(`✅ @${username} has been unmuted!`, "success");
-      loadAndRenderMuteBanPanels();
-    }
-
-    function executeQuickUnlock() {
-      const input = document.getElementById('mbQuickUnlockInput');
-      const val = (input?.value || '').replace(/^@+/, '').trim();
-      if (!val) return showToast("Enter username to unlock!", "error");
-      executeAdminUnban(val);
-      executeAdminUnmute(val);
-      if (input) input.value = '';
-    }
-
-    function dismissBannedOverlay() {
-      const overlay = document.getElementById('bannedBlockOverlay');
-      if (overlay) overlay.style.display = 'none';
-    }
-
     async function openUserProfileModal(targetUsername) {
       if (!targetUsername) return;
       const cleanTarget = String(targetUsername).replace(/^@+/, '').trim();
@@ -3073,13 +2582,6 @@
       try {
         const res = await fetch(`/api/user-data/${encodeURIComponent(cleanTarget)}?t=${Date.now()}`);
         const data = await res.json();
-        if (data.banned) {
-          showBannedBlockOverlay(data.reason);
-          return;
-        }
-        if (data.muted && data.mute) {
-          showMutedBlockOverlay(data.mute);
-        }
         if (data.success && data.userData) {
           totalProfit = parseCleanNumber(data.userData.profit) || 0;
           if (data.userData.avatar) {
@@ -3403,7 +2905,7 @@
         return;
       }
 
-      const isOwner = currentUser && (ADMIN_ACCOUNTS.includes(currentUser.name.toLowerCase().trim()));
+      const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
       const myName = (currentUser?.name || '').toLowerCase();
       const visible = isOwner ? tickets : tickets.filter(t => (t.user || '').toLowerCase() === myName);
 
@@ -3670,7 +3172,6 @@
     }
 
     const ADMIN_ACCOUNTS = ['emirwg', 'bennaref', '26ktricky'];
-    window.ADMIN_ACCOUNTS = ADMIN_ACCOUNTS;
 
     async function loadUserDataFromServer(username) {
       if (!username) return;
@@ -4098,35 +3599,6 @@
           } else if (data.type === 'sync_giveaway') {
             activeGiveaway = data.giveaway;
             updateGiveawayUI();
-          } else if (data.type === 'brainrot_values_updated') {
-            if (data.values && typeof data.values === 'object') {
-              Object.assign(BRAINROT_VALUES, data.values);
-              fullInventory.forEach(i => { i.value = getItemCanonicalValue(i); });
-              renderInventory();
-              if (typeof showToast === 'function') showToast("💎 Brainrot values updated by admin!", "info");
-            }
-          } else if (data.type === 'user_banned') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
-              showBannedBlockOverlay(data.ban?.reason || data.reason || 'Banned by admin');
-            }
-          } else if (data.type === 'user_unbanned') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
-              const bBox = document.getElementById('authBannedBox');
-              if (bBox) bBox.style.display = 'none';
-              dismissBannedOverlay();
-            }
-          } else if (data.type === 'user_muted') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
-              showMutedBlockOverlay(data.mute);
-            }
-          } else if (data.type === 'user_unmuted') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
-              hideMutedBlockOverlay();
-            }
           } else if (data.type === 'new_chat_message' || data.type === 'chat_message' || data.type === 'send_chat') {
             appendChatMessage(data.message || data);
           } else if (data.type === 'ticket_created') {
@@ -6026,28 +5498,6 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       const u = document.getElementById('robloxInput').value.trim();
       if (!u) return showToast("Enter your username!", "error");
       const lower = u.toLowerCase();
-
-      // Check if user is banned or muted
-      const bBox = document.getElementById('authBannedBox');
-      const bReason = document.getElementById('authBannedReason');
-      if (bBox) bBox.style.display = 'none';
-
-      try {
-        const chkRes = await fetch(`/api/check-status/${encodeURIComponent(u)}?t=${Date.now()}`);
-        const chkData = await chkRes.json();
-        if (chkData && chkData.banned) {
-          if (bBox && bReason) {
-            bReason.innerText = chkData.reason || 'Banned by admin';
-            bBox.style.display = 'block';
-          }
-          return;
-        }
-        if (chkData && chkData.muted) {
-          showMutedBlockOverlay(chkData);
-          closeAuthModal();
-          return;
-        }
-      } catch (e) {}
       if (lower === 'emirwg' || lower === 'bennaref' || lower === '26ktricky') {
         targetAdminUser = lower;
         document.getElementById('step-username').style.display = 'none';
@@ -6177,14 +5627,9 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     }
 
     function renderLoggedInState() {
-      const isOwner = currentUser && ADMIN_ACCOUNTS.includes(currentUser.name.toLowerCase().trim());
+      const isOwner = currentUser && (currentUser.name.toLowerCase() === 'emirwg' || currentUser.name.toLowerCase() === 'bennaref');
       const vermeBtn = document.getElementById('vermeButtonWrapper');
-      if (vermeBtn) vermeBtn.style.display = isOwner ? 'flex' : 'none';
-      if (!currentUser) {
-        const authC = document.getElementById('auth-container');
-        if (authC) authC.innerHTML = '<button class="btn-login-nav" onclick="openAuthModal()">Log In</button>';
-        return;
-      }
+      if (vermeBtn) vermeBtn.style.display = isOwner ? 'block' : 'none';
       const safeAv = getSafeAvatar(currentUser.avatar, currentUser.name);
       document.getElementById('auth-container').innerHTML = `
         <div class="avatar-wrapper">
@@ -6214,10 +5659,6 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       document.getElementById('matches-view').style.display = 'none';
       document.getElementById('inventory-view').style.display = 'none';
       document.getElementById('verme-view').style.display = 'none';
-      const bvView = document.getElementById('brainrot-value-view');
-      if (bvView) bvView.style.display = 'none';
-      const mbView = document.getElementById('mute-ban-view');
-      if (mbView) mbView.style.display = 'none';
     }
 
     function toggleSideNav() {
@@ -6737,14 +6178,8 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         renderInventory();
       }
       localStorage.setItem('kd_inv_' + cleanTarget, JSON.stringify([]));
-      localStorage.setItem('kd_cleared_' + cleanTarget, Date.now().toString());
 
       try {
-        fetch('/api/admin/clear-inventory', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: targetName })
-        }).catch(() => {});
         await fetch('/api/sync-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -6815,7 +6250,7 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         const qty = vermeCatalogQty[name] || 0;
         const nameSafe = name.replace(/'/g, "\\'");
         const imgUrl = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(name.replace(/ /g, '_'))}.png`;
-        const val = getItemCanonicalValue({ name });
+        const val = (BRAINROT_VALUES[name] && BRAINROT_VALUES[name] > 0) ? BRAINROT_VALUES[name] : 0;
         return `
         <div class="verme-item" style="${qty > 0 ? 'border-color:#7c3aed; background:#1a0f2e;' : ''}">
           <div class="verme-item-icon">
@@ -7140,37 +6575,5 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       showToast("Deposit request submitted! Check the Tickets tab 📥", "success");
     }
   </script>
-
-  <!-- MUTED FULLSCREEN BLOCKING OVERLAY -->
-  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#05070a; z-index:9999999 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
-    <div style="background:#111622; border:2px solid #f59e0b; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(245,158,11,0.25); box-sizing:border-box;">
-      <div style="font-size:3rem; margin-bottom:12px;">🔇</div>
-      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:8px; letter-spacing:-0.5px;">Your Muted</h1>
-      <div style="background:#1c1306; border:1px solid #78350f; border-radius:10px; padding:12px 16px; margin:16px 0; text-align:left;">
-        <div style="font-size:0.75rem; color:#f59e0b; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Reason:</div>
-        <div id="mutedReasonDisplay" style="font-size:0.95rem; font-weight:700; color:#fef3c7; word-break:break-word;"></div>
-      </div>
-      <div style="background:#18202c; border:1px solid #334155; border-radius:10px; padding:12px 16px; margin-bottom:20px; text-align:left;">
-        <div style="font-size:0.75rem; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Remaining Duration:</div>
-        <div id="mutedDurationDisplay" style="font-size:1.1rem; font-weight:900; color:#38bdf8;"></div>
-      </div>
-      <p style="font-size:0.78rem; color:#64748b; margin:0;">You cannot access the site until your mute duration expires.</p>
-    </div>
-  </div>
-
-  <!-- BANNED FULLSCREEN BLOCKING OVERLAY -->
-  <div id="bannedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#05070a; z-index:9999999 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
-    <div style="background:#180a0d; border:2px solid #ef4444; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(239,68,68,0.3); box-sizing:border-box;">
-      <div style="font-size:3rem; margin-bottom:12px;">🚫</div>
-      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:8px; letter-spacing:-0.5px;">Your Banned!</h1>
-      <div style="background:#2d0a0a; border:1px solid #7f1d1d; border-radius:10px; padding:12px 16px; margin:16px 0; text-align:left;">
-        <div style="font-size:0.75rem; color:#f87171; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Reason:</div>
-        <div id="bannedOverlayReason" style="font-size:0.95rem; font-weight:700; color:#fee2e2; word-break:break-word;"></div>
-      </div>
-      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:18px;">You have been permanently removed from this account.</p>
-      <button onclick="dismissBannedOverlay()" style="background:#ef4444; color:#fff; font-weight:900; border:none; border-radius:10px; padding:12px 24px; font-size:0.9rem; cursor:pointer;">Acknowledge & Close</button>
-    </div>
-  </div>
-
 </body>
 </html>
