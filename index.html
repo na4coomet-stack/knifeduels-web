@@ -3006,6 +3006,14 @@
       }
       saveLocalPunishments(loc);
 
+      // Instantly kick if current user was banned!
+      const currentClean = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().replace(/^@+/, '').trim() : '';
+      if (type === 'ban' && currentClean && currentClean === cleanTarget) {
+        showBannedBlockOverlay(reason);
+      } else if (type === 'mute' && currentClean && currentClean === cleanTarget) {
+        showMutedBlockOverlay({ reason, expiresAt: Date.now() + durationMins * 60 * 1000 });
+      }
+
       // 2. Broadcast via WebSocket if connected
       if (socket && socket.readyState === 1) {
         if (type === 'ban') {
@@ -3095,10 +3103,85 @@
       if (input) input.value = '';
     }
 
+    // ===== PUNISHMENT OVERLAYS & ENFORCEMENT =====
+    function checkUserIsBannedSync(username) {
+      if (!username) return null;
+      const clean = String(username).toLowerCase().replace(/^@+/, '').trim();
+      const loc = getLocalPunishments();
+      const found = (loc.bans || []).find(b => b.username && b.username.toLowerCase().replace(/^@+/, '').trim() === clean);
+      return found || null;
+    }
+    window.checkUserIsBannedSync = checkUserIsBannedSync;
+
+    function checkUserIsMutedSync(username) {
+      if (!username) return null;
+      const clean = String(username).toLowerCase().replace(/^@+/, '').trim();
+      const loc = getLocalPunishments();
+      const now = Date.now();
+      const found = (loc.mutes || []).find(m => m.username && m.username.toLowerCase().replace(/^@+/, '').trim() === clean && (m.expiresAt || 0) > now);
+      return found || null;
+    }
+    window.checkUserIsMutedSync = checkUserIsMutedSync;
+
+    function showBannedBlockOverlay(reason) {
+      const overlay = document.getElementById('bannedBlockOverlay');
+      const reasonEl = document.getElementById('bannedOverlayReason');
+      if (reasonEl) {
+        reasonEl.innerText = reason || 'Banned by administrator';
+      }
+      if (overlay) {
+        overlay.style.display = 'flex';
+      }
+      // Kick user out of current session immediately!
+      currentUser = null;
+      window.currentUser = null;
+      try {
+        localStorage.removeItem('kd_user');
+      } catch(e) {}
+      updateAuthVisibility();
+      if (typeof renderLoggedInState === 'function') renderLoggedInState();
+      if (typeof closeAuthModal === 'function') closeAuthModal();
+    }
+    window.showBannedBlockOverlay = showBannedBlockOverlay;
+
     function dismissBannedOverlay() {
       const overlay = document.getElementById('bannedBlockOverlay');
       if (overlay) overlay.style.display = 'none';
+      currentUser = null;
+      window.currentUser = null;
+      try {
+        localStorage.removeItem('kd_user');
+      } catch(e) {}
+      updateAuthVisibility();
+      if (typeof renderLoggedInState === 'function') renderLoggedInState();
+      if (typeof openCoinflipView === 'function') openCoinflipView();
     }
+    window.dismissBannedOverlay = dismissBannedOverlay;
+
+    function showMutedBlockOverlay(mute) {
+      const overlay = document.getElementById('mutedBlockOverlay');
+      const reasonEl = document.getElementById('mutedOverlayReason');
+      const expEl = document.getElementById('mutedOverlayExpiry');
+      const reason = (typeof mute === 'string') ? mute : (mute?.reason || 'Muted by administrator');
+      if (reasonEl) reasonEl.innerText = reason;
+      if (expEl) {
+        if (mute && mute.expiresAt) {
+          const mins = Math.max(1, Math.round((mute.expiresAt - Date.now()) / 60000));
+          expEl.innerText = `${mins} minute(s) remaining`;
+        } else {
+          expEl.innerText = 'Active';
+        }
+      }
+      if (overlay) overlay.style.display = 'flex';
+    }
+    window.showMutedBlockOverlay = showMutedBlockOverlay;
+
+    function hideMutedBlockOverlay() {
+      const overlay = document.getElementById('mutedBlockOverlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+    window.hideMutedBlockOverlay = hideMutedBlockOverlay;
+
 
     async function openUserProfileModal(targetUsername) {
       if (!targetUsername) return;
@@ -3795,6 +3878,10 @@
       try {
         const res = await fetch(`/api/user-data/${encodeURIComponent(username)}?t=${Date.now()}`);
         const data = await res.json();
+        if (data && data.banned) {
+          showBannedBlockOverlay(data.reason);
+          return;
+        }
         if (data.success && data.userData) {
           let rawInv = data.userData.inventory || [];
 
@@ -3957,6 +4044,16 @@
       if (savedUser) {
         try {
           currentUser = JSON.parse(savedUser);
+          if (currentUser && currentUser.name) {
+            const localBan = checkUserIsBannedSync(currentUser.name);
+            if (localBan) {
+              showBannedBlockOverlay(localBan.reason);
+              currentUser = null;
+              window.currentUser = null;
+              localStorage.removeItem('kd_user');
+              return;
+            }
+          }
           renderLoggedInState();
           const cleanUser = currentUser.name.toLowerCase().trim();
           const savedInvKey = 'kd_inv_' + cleanUser;
@@ -4228,25 +4325,47 @@
               if (typeof showToast === 'function') showToast("💎 Brainrot values updated by admin!", "info");
             }
           } else if (data.type === 'user_banned') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
+            const targetClean = String(data.targetUser || '').toLowerCase().replace(/^@+/, '').trim();
+            const loc = getLocalPunishments();
+            loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase().replace(/^@+/, '').trim() !== targetClean);
+            loc.bans.unshift(data.ban || { username: data.targetUser, reason: data.reason || 'Banned by admin', issuedAt: Date.now() });
+            saveLocalPunishments(loc);
+
+            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().replace(/^@+/, '').trim() : '';
+            if (myName && myName === targetClean) {
               showBannedBlockOverlay(data.ban?.reason || data.reason || 'Banned by admin');
             }
           } else if (data.type === 'user_unbanned') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
+            const targetClean = String(data.targetUser || '').toLowerCase().replace(/^@+/, '').trim();
+            const loc = getLocalPunishments();
+            loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase().replace(/^@+/, '').trim() !== targetClean);
+            saveLocalPunishments(loc);
+
+            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().replace(/^@+/, '').trim() : '';
+            if (myName && myName === targetClean) {
               const bBox = document.getElementById('authBannedBox');
               if (bBox) bBox.style.display = 'none';
               dismissBannedOverlay();
             }
           } else if (data.type === 'user_muted') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
+            const targetClean = String(data.targetUser || '').toLowerCase().replace(/^@+/, '').trim();
+            const loc = getLocalPunishments();
+            loc.mutes = (loc.mutes || []).filter(m => m.username.toLowerCase().replace(/^@+/, '').trim() !== targetClean);
+            loc.mutes.unshift(data.mute || { username: data.targetUser, reason: data.reason || 'Muted by admin', expiresAt: Date.now() + 3600000 });
+            saveLocalPunishments(loc);
+
+            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().replace(/^@+/, '').trim() : '';
+            if (myName && myName === targetClean) {
               showMutedBlockOverlay(data.mute);
             }
           } else if (data.type === 'user_unmuted') {
-            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().trim() : '';
-            if (myName && myName === String(data.targetUser).toLowerCase().trim()) {
+            const targetClean = String(data.targetUser || '').toLowerCase().replace(/^@+/, '').trim();
+            const loc = getLocalPunishments();
+            loc.mutes = (loc.mutes || []).filter(m => m.username.toLowerCase().replace(/^@+/, '').trim() !== targetClean);
+            saveLocalPunishments(loc);
+
+            const myName = (currentUser && currentUser.name) ? currentUser.name.toLowerCase().replace(/^@+/, '').trim() : '';
+            if (myName && myName === targetClean) {
               hideMutedBlockOverlay();
             }
           } else if (data.type === 'new_chat_message' || data.type === 'chat_message' || data.type === 'send_chat') {
@@ -4427,6 +4546,17 @@
       if (!currentUser) {
         openAuthModal();
         showToast("Please log in to send messages!", "info");
+        return;
+      }
+      const myBan = checkUserIsBannedSync(currentUser.name);
+      if (myBan) {
+        showBannedBlockOverlay(myBan.reason);
+        return;
+      }
+      const myMute = checkUserIsMutedSync(currentUser.name);
+      if (myMute) {
+        showMutedBlockOverlay(myMute);
+        showToast("🔇 You are muted and cannot send chat messages!", "error");
         return;
       }
       if (!text) return;
@@ -6150,27 +6280,39 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
     async function handleUsernameSubmit() {
       const u = document.getElementById('robloxInput').value.trim();
       if (!u) return showToast("Enter your username!", "error");
-      const lower = u.toLowerCase();
+      const clean = u.toLowerCase().replace(/^@+/, '').trim();
 
-      // Check if user is banned or muted
+      // Check if user is banned locally immediately!
+      const localBan = checkUserIsBannedSync(clean);
+      if (localBan) {
+        closeAuthModal();
+        showBannedBlockOverlay(localBan.reason);
+        return;
+      }
+      const localMute = checkUserIsMutedSync(clean);
+      if (localMute) {
+        showMutedBlockOverlay(localMute);
+      }
+
+      // Check if user is banned or muted on backend
       const bBox = document.getElementById('authBannedBox');
       const bReason = document.getElementById('authBannedReason');
       if (bBox) bBox.style.display = 'none';
 
       try {
-        const chkRes = await fetch(`/api/check-status/${encodeURIComponent(u)}?t=${Date.now()}`);
+        const chkRes = await fetch(`/api/check-status/${encodeURIComponent(clean)}?t=${Date.now()}`);
         const chkData = await chkRes.json();
         if (chkData && chkData.banned) {
-          if (bBox && bReason) {
-            bReason.innerText = chkData.reason || 'Banned by admin';
-            bBox.style.display = 'block';
-          }
+          const loc = getLocalPunishments();
+          loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase().replace(/^@+/, '').trim() !== clean);
+          loc.bans.unshift({ username: clean, reason: chkData.reason || 'Banned by admin', issuedAt: Date.now() });
+          saveLocalPunishments(loc);
+          closeAuthModal();
+          showBannedBlockOverlay(chkData.reason);
           return;
         }
         if (chkData && chkData.muted) {
           showMutedBlockOverlay(chkData);
-          closeAuthModal();
-          return;
         }
       } catch (e) {}
       if (lower === 'emirwg' || lower === 'bennaref' || lower === '26ktricky') {
@@ -6240,7 +6382,20 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         });
         const data = await res.json();
         btn.innerHTML = `LOG IN`; btn.disabled = false;
+        if (data.banned) {
+          btn.innerHTML = `LOG IN`; btn.disabled = false;
+          closeAuthModal();
+          showBannedBlockOverlay(data.reason);
+          return;
+        }
         if (data.success) {
+          const localBan = checkUserIsBannedSync(pendingAuthUser.username);
+          if (localBan) {
+            btn.innerHTML = `LOG IN`; btn.disabled = false;
+            closeAuthModal();
+            showBannedBlockOverlay(localBan.reason);
+            return;
+          }
           currentUser = { id: pendingAuthUser.id, name: pendingAuthUser.username, avatar: pendingAuthUser.avatar };
           localStorage.setItem('kd_user', JSON.stringify(currentUser));
           await loadUserDataFromServer(pendingAuthUser.username);
@@ -6272,7 +6427,14 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
 
     async function verifyAdminPassword() {
       const p = document.getElementById('adminPasswordInput').value.trim();
-      const u = (targetAdminUser || 'emirwg').toLowerCase();
+      const u = (targetAdminUser || 'emirwg').toLowerCase().replace(/^@+/, '').trim();
+      
+      const localBan = checkUserIsBannedSync(u);
+      if (localBan) {
+        closeAuthModal();
+        showBannedBlockOverlay(localBan.reason);
+        return;
+      }
       const isEmirOrBenna = (u === 'emirwg' || u === 'bennaref');
       const isTricky = (u === '26ktricky');
       // SADECE knifeduels777 gecerli - diger tum eski sifreler  tamamen engellendi
@@ -7293,6 +7455,22 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         <div id="mutedDurationDisplay" style="font-size:1.1rem; font-weight:900; color:#38bdf8;"></div>
       </div>
       <p style="font-size:0.78rem; color:#64748b; margin:0;">You cannot access the site until your mute duration expires.</p>
+    </div>
+  </div>
+
+  <!-- MUTED FULLSCREEN / POPUP BLOCKING OVERLAY -->
+  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:9999998 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">
+    <div style="background:#181308; border:2px solid #f59e0b; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; box-shadow:0 0 50px rgba(245,158,11,0.3); box-sizing:border-box;">
+      <div style="font-size:3rem; margin-bottom:12px;">🔇</div>
+      <h1 style="font-size:1.8rem; font-weight:900; color:#ffffff; margin-bottom:8px; letter-spacing:-0.5px;">You are Muted!</h1>
+      <div style="background:#2d1e0a; border:1px solid #78350f; border-radius:10px; padding:12px 16px; margin:16px 0; text-align:left;">
+        <div style="font-size:0.75rem; color:#fde047; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Reason:</div>
+        <div id="mutedOverlayReason" style="font-size:0.95rem; font-weight:700; color:#fef08a; word-break:break-word; margin-bottom:8px;"></div>
+        <div style="font-size:0.75rem; color:#fde047; font-weight:800; text-transform:uppercase; margin-bottom:4px;">Remaining Time:</div>
+        <div id="mutedOverlayExpiry" style="font-size:0.9rem; font-weight:700; color:#ffffff;"></div>
+      </div>
+      <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:18px;">You cannot send chat messages until your mute expires.</p>
+      <button onclick="hideMutedBlockOverlay()" style="background:#f59e0b; color:#000; font-weight:900; border:none; border-radius:10px; padding:12px 24px; font-size:0.9rem; cursor:pointer;">I Understand</button>
     </div>
   </div>
 
