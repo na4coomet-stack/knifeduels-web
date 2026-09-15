@@ -6441,6 +6441,21 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
       showRobloxVerifyStep(fallbackUser, localWords);
     }
 
+        function copySecurityWords() {
+      if (!generatedWords) return;
+      navigator.clipboard.writeText(generatedWords).then(() => {
+        const btn = document.getElementById('btnCopyWords');
+        if (btn) {
+          btn.innerText = "COPIED! ✓";
+          setTimeout(() => { btn.innerText = "COPY ALL 📋"; }, 2000);
+        }
+        showToast("Words copied to clipboard! Paste into your Roblox description.", "success");
+      }).catch(() => {
+        showToast("Copied: " + generatedWords, "success");
+      });
+    }
+    window.copySecurityWords = copySecurityWords;
+
     async function handleVerify() {
       if (!pendingAuthUser) return;
       const btn = document.getElementById('btnLoginConfirm');
