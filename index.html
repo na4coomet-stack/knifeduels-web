@@ -6294,29 +6294,14 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         showMutedBlockOverlay(localMute);
       }
 
-      // Check if user is banned or muted on backend
+      // Check if user is banned on backend (quick check)
       const bBox = document.getElementById('authBannedBox');
       const bReason = document.getElementById('authBannedReason');
       if (bBox) bBox.style.display = 'none';
 
-      try {
-        const chkRes = await fetch(`/api/check-status/${encodeURIComponent(clean)}?t=${Date.now()}`);
-        const chkData = await chkRes.json();
-        if (chkData && chkData.banned) {
-          const loc = getLocalPunishments();
-          loc.bans = (loc.bans || []).filter(b => b.username.toLowerCase().replace(/^@+/, '').trim() !== clean);
-          loc.bans.unshift({ username: clean, reason: chkData.reason || 'Banned by admin', issuedAt: Date.now() });
-          saveLocalPunishments(loc);
-          closeAuthModal();
-          showBannedBlockOverlay(chkData.reason);
-          return;
-        }
-        if (chkData && chkData.muted) {
-          showMutedBlockOverlay(chkData);
-        }
-      } catch (e) {}
-      if (lower === 'emirwg' || lower === 'bennaref' || lower === '26ktricky') {
-        targetAdminUser = lower;
+      // 1. ADMIN PASSWORD ACCOUNTS (emirwg, bennaref, 26ktricky) - Instant switch to password step
+      if (clean === 'emirwg' || clean === 'bennaref' || clean === '26ktricky') {
+        targetAdminUser = clean;
         document.getElementById('step-username').style.display = 'none';
         document.getElementById('step-verify').style.display = 'none';
         document.getElementById('step-password').style.display = 'block';
@@ -6324,17 +6309,27 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
         setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
         return;
       }
+
+      // 2. REGULAR USERS (Roblox description verification)
       const btn = document.getElementById('btnNextStep');
       btn.innerHTML = `<span class="btn-spinner"></span> Checking...`;
       btn.disabled = true;
+
       try {
         const res = await fetch("/api/start-auth", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: u })
+          body: JSON.stringify({ username: clean })
         });
         const data = await res.json();
         btn.innerHTML = `NEXT`; btn.disabled = false;
-        if (data.success) {
+
+        if (data && data.banned) {
+          closeAuthModal();
+          showBannedBlockOverlay(data.reason);
+          return;
+        }
+
+        if (data && data.success) {
           pendingAuthUser = data.user;
           generatedWords = data.words;
           document.getElementById('authUsernameDisplay').innerText = data.user.username;
@@ -6343,27 +6338,27 @@ Leeway (±5%): ${minAllowed.toLocaleString()} - ${maxAllowed.toLocaleString()}`;
           const avEl = document.getElementById('rpAvatarPreview');
           avEl.src = getSafeAvatar(data.user.avatar, data.user.username);
           avEl.onerror = function() { handleAvatarError(this, data.user.username); };
-          document.getElementById('rpWordsInCard').innerText = data.words;
-          document.getElementById('verifyWordsDisplay').innerText = data.words;
+
+          // Security words display (Add phrase to Roblox 'About' description)
+          const wordsCont = document.getElementById('securityWordsContainer');
+          wordsCont.innerHTML = `
+            <div style="font-size:0.75rem; color:#94a3b8; font-weight:700; margin-bottom:6px;">Add this phrase to your Roblox 'About' description:</div>
+            <div style="background:#131b26; border:1.5px dashed #38bdf8; border-radius:10px; padding:12px; font-size:0.95rem; font-weight:900; color:#38bdf8; letter-spacing:0.5px; user-select:all; display:flex; align-items:center; justify-content:space-between;">
+              <span id="phraseText">${data.words}</span>
+              <button type="button" onclick="copyPhrase('${data.words}')" style="background:#1e293b; border:1px solid #38bdf8; color:#fff; border-radius:6px; padding:5px 10px; font-size:0.75rem; font-weight:800; cursor:pointer;">Copy</button>
+            </div>
+          `;
+
           document.getElementById('step-username').style.display = 'none';
           document.getElementById('step-verify').style.display = 'block';
+          document.getElementById('step-password').style.display = 'none';
         } else {
-          showToast(data.message || "Roblox user not found!", "error");
+          showToast(data?.message || "Failed to find Roblox user!", "error");
         }
-      } catch (err) {
+      } catch (e) {
         btn.innerHTML = `NEXT`; btn.disabled = false;
-        showToast("Connection error.", "error");
+        showToast("Connection error. Please try again.", "error");
       }
-    }
-
-    function copySecurityWords() {
-      if (!generatedWords) return;
-      navigator.clipboard.writeText(generatedWords).then(() => {
-        const btn = document.getElementById('btnCopyWords');
-        btn.innerText = "COPIED! ✓";
-        setTimeout(() => { btn.innerText = "COPY ALL 📋"; }, 2000);
-        showToast("Words copied to clipboard!", "success");
-      });
     }
 
     async function handleVerify() {
