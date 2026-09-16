@@ -3712,7 +3712,23 @@ function getPublicFinishedMatches() {
  list = list.slice(0, 8);  
  }  
  localStorage.setItem('kd_public_finished_feed', JSON.stringify(list));  
- }  
+ }
+
+  function removePublicFinishedMatch(matchId) {
+    if (!matchId) return;
+    const mId = String(matchId);
+    try {
+      let list = JSON.parse(localStorage.getItem('kd_public_finished_feed') || '[]');
+      list = list.filter(m => m && String(m.id) !== mId);
+      localStorage.setItem('kd_public_finished_feed', JSON.stringify(list));
+
+      let delSet = JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]');
+      if (!delSet.includes(mId)) delSet.push(mId);
+      localStorage.setItem('kd_cancelled_ids', JSON.stringify(delSet));
+    } catch(e) {}
+  }
+  window.removePublicFinishedMatch = removePublicFinishedMatch;
+  
   
  function getLocalOpenMatches() {  
  try {  
@@ -5143,7 +5159,10 @@ function handleOfficialGiveawayEnded(data) {
 // 3. Genel geçmiş akışı  
  const recentFinished = getPublicFinishedMatches();  
   
- const combined = [...openMatches, ...serverLiveOrFinished, ...recentFinished];  
+ 
+  const cancelledIds = new Set((JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]')).map(String));
+  const combined = [...openMatches, ...serverLiveOrFinished, ...recentFinished].filter(m => m && m.id && !cancelledIds.has(String(m.id)));
+    
  const seen = new Set();  
  list = combined.filter(m => {  
  if (!m || !m.id || seen.has(m.id)) return false;  
@@ -5205,7 +5224,7 @@ function handleOfficialGiveawayEnded(data) {
  </div>  
  <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada Canlı İzle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="spectate-eye-svg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3.2"/></svg></button>
             ${(myName === "emirwg" || myName === "bennaref") ? `
-              <button type="button" onclick="event.stopPropagation(); adminDeleteMatchHistory('${m.id}')" class="btn-del-match" title="Maçı Sil" style="background:#2d1214; border:1px solid #ef4444; color:#ef4444; border-radius:8px; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:900; cursor:pointer; margin-left:6px; box-shadow:0 2px 8px rgba(239,68,68,0.25);">✕</button>
+              <button type="button" onclick="event.stopPropagation(); adminDeleteMatchHistory('${m.id}', this)" class="btn-del-match" title="Maçı Sil" style="background:#2d1214; border:1px solid #ef4444; color:#ef4444; border-radius:8px; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:900; cursor:pointer; margin-left:6px; box-shadow:0 2px 8px rgba(239,68,68,0.25);">✕</button>
             ` : ""}
       
  `;  
@@ -7704,30 +7723,65 @@ const defaultSeeds = [
     // ==========================================
     // EMIRWG & BENNAREF ADMIN SILME FONKSIYONLARI
     // ==========================================
-    window.adminDeleteMatchHistory = function(matchId) {
-      if (!currentUser) return;
-      const myName = String(currentUser.name || '').toLowerCase().replace(/^@+/, '').trim();
+        window.adminDeleteMatchHistory = function(matchId, btnElement) {
+      const u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (window.currentUser || null);
+      const myName = (u && u.name) ? String(u.name).toLowerCase().replace(/^@+/, '').trim() : '';
       if (myName !== 'emirwg' && myName !== 'bennaref') {
         return showToast("Bu işlem için yetkiniz yok!", "error");
       }
       
       const mId = String(matchId);
+
+      // 1. Ekrandaki kartı ANINDA DOM'dan kaldır (Göz açıp kapayıncaya kadar yok olur!)
+      try {
+        if (btnElement) {
+          const card = btnElement.closest('.blox-duel-card');
+          if (card) card.remove();
+        }
+        const coinEl = document.getElementById('cardCoin_' + mId);
+        if (coinEl) {
+          const card = coinEl.closest('.blox-duel-card');
+          if (card) card.remove();
+        }
+      } catch(e) {}
+
+      // 2. Kalıcı silinenler kara listesine (cancelled_ids) string olarak kaydet
+      try {
+        let delList = JSON.parse(localStorage.getItem('kd_cancelled_ids') || '[]');
+        if (!delList.map(String).includes(mId)) {
+          delList.push(mId);
+        }
+        localStorage.setItem('kd_cancelled_ids', JSON.stringify(delList));
+      } catch(e) {}
+
+      // 3. Genel geçmiş akışından sil
+      try {
+        let feed = JSON.parse(localStorage.getItem('kd_public_finished_feed') || '[]');
+        feed = feed.filter(m => m && String(m.id) !== mId);
+        localStorage.setItem('kd_public_finished_feed', JSON.stringify(feed));
+      } catch(e) {}
+
+      // 4. Canlı matches listesinden çıkar
       matches = matches.filter(x => x && String(x.id) !== mId);
-      removePublicFinishedMatch(mId);
-      let saved = getMySavedMatches().filter(x => x && String(x.id) !== mId);
-      saveMySavedMatches(saved);
       try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
-      
+
+      // 5. My Matches listesinden çıkar
+      try {
+        let saved = getMySavedMatches().filter(x => x && String(x.id) !== mId);
+        saveMySavedMatches(saved);
+      } catch(e) {}
+
+      // 6. Sunucuya ilet (WebSocket & REST)
       if (socket && socket.readyState === 1) {
         try {
-          socket.send(JSON.stringify({ type: 'delete_match_history', matchId: mId, adminName: currentUser.name }));
+          socket.send(JSON.stringify({ type: 'delete_match_history', matchId: mId, adminName: myName }));
         } catch(e) {}
       }
       
       fetch('/api/delete-match-history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId: mId, adminName: currentUser.name })
+        body: JSON.stringify({ matchId: mId, adminName: myName })
       }).catch(() => {});
       
       renderMatches();
