@@ -3933,37 +3933,49 @@ function getPublicFinishedMatches() {
  return;  
  }  
  if (data.success && data.userData) {  
- let rawInv = data.userData.inventory || [];  
-  
- // KURAL: Kazanılan hiçbir eşya ASLA silinemez!   
-// Sadece ve sadece eski 10 adet başlangıç eşyası kalıntısı varsa temizle:  
- if (!isAdmin && rawInv.length > 0 && rawInv.every(i => /^sec_\\d+$/.test(i.id || ''))) {  
- rawInv = [];  
- fetch('/api/sync-user', {  
- method: 'POST',  
- headers: { 'Content-Type': 'application/json' },  
- body: JSON.stringify({ username, inventory: [], profit: data.userData.profit || 0 })  
- }).catch(() => {});  
- }  
-  
- // KURAL 1: emirwg veya herhangi bir hesap için sunucu eski 311/317 eşyayı geri yüklemeye çalışırsa  
- // ve kullanıcının kaydettiği özel/temiz envanteri varsa, eski 317 eşyayı reddet  
- const localSaved = localStorage.getItem(savedInvKey);  
- if (localSaved !== null) {  
- try {  
- const localInv = JSON.parse(localSaved);  
- if (rawInv.length >= 300 && localInv.length < 300) {  
- rawInv = localInv;  
- fetch('/api/sync-user', {  
- method: 'POST',  
- headers: { 'Content-Type': 'application/json' },  
- body: JSON.stringify({ username, inventory: rawInv, profit: getStoredProfit() })  
- }).catch(() => {});  
- }  
- } catch(e) {}  
- }  
-  
- const seenInstanceIds = new Set();  
+ let rawInv = data.userData.inventory || [];
+
+          // ============================================================
+          // ASLA ENVANTER KAYBI OLMASIN (BULLETPROOF INVENTORY PRESERVATION)
+          // ============================================================
+          const localSaved = localStorage.getItem(savedInvKey);
+          if (localSaved !== null) {
+            try {
+              const localInv = JSON.parse(localSaved);
+              if (Array.isArray(localInv) && localInv.length > 0) {
+                if (rawInv.length === 0) {
+                  // Sunucu 0 dönse bile yereldeki kazanılan ganimeti kesinlikle koru!
+                  rawInv = localInv;
+                  fetch('/api/sync-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      username: cleanUser, 
+                      inventory: rawInv, 
+                      profit: getStoredProfit() 
+                    })
+                  }).catch(() => {});
+                } else {
+                  // Yerelde olup sunucuda eksik kalan tüm maç ganimetlerini birleştir
+                  const serverIds = new Set(rawInv.map(i => String(i.id)));
+                  const missingFromLocal = localInv.filter(i => !serverIds.has(String(i.id)));
+                  if (missingFromLocal.length > 0) {
+                    rawInv.push(...missingFromLocal);
+                    fetch('/api/sync-user', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        username: cleanUser, 
+                        inventory: rawInv, 
+                        profit: getStoredProfit() 
+                      })
+                    }).catch(() => {});
+                  }
+                }
+              }
+            } catch(e) {}
+          }
+          const seenInstanceIds = new Set();  
  fullInventory = rawInv.map((item, idx) => {  
  let uniqueId = item.id;  
  if (!uniqueId || seenInstanceIds.has(uniqueId)) {  
@@ -4328,7 +4340,11 @@ const rawSender = msg.senderName || msg.sender || 'User';
  <div class="chat-bubble">  
  <span style="font-size:0.72rem; font-weight:800; color:#94a3b8;">@${safeSender}</span>  
  <span class="chat-text">${safeText}</span>  
- </div>  
+ 
+        ${(currentUser && (currentUser.name.toLowerCase().replace(/^@+/, '').trim() === 'emirwg' || currentUser.name.toLowerCase().replace(/^@+/, '').trim() === 'bennaref')) ? `
+          <button type="button" onclick="adminDeleteChatMessage('${msgKey}', this)" title="Mesajı Sil" style="background:none; border:none; color:#ef4444; font-weight:900; font-size:0.85rem; cursor:pointer; padding:2px 6px; margin-left:auto; opacity:0.6; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">✕</button>
+        ` : ''}
+    </div>  
  `;  
  box.appendChild(item);  
  box.scrollTop = box.scrollHeight;  
@@ -4494,7 +4510,26 @@ const rawSender = msg.senderName || msg.sender || 'User';
  }  
  addPublicFinishedMatch(matches[mIdx] || finishedMatch);  
  renderMatches();  
- } else if (data.type === 'match_cancelled' || data.type === 'match_removed_public') {  
+ 
+          } else if (data.type === 'chat_message_deleted') {
+            const mId = String(data.msgId);
+            const box = document.getElementById('chatMessagesBox');
+            if (box) {
+              const allBtns = box.querySelectorAll('.btn-admin-del-chat');
+              allBtns.forEach(b => {
+                if (b.getAttribute('onclick')?.includes(mId)) {
+                  b.closest('.chat-item')?.remove();
+                }
+              });
+            }
+          } else if (data.type === 'match_removed_public') {
+            const mId = String(data.matchId);
+            matches = matches.filter(x => x && String(x.id) !== mId);
+            removePublicFinishedMatch(mId);
+            let saved = getMySavedMatches().filter(x => x && String(x.id) !== mId);
+            saveMySavedMatches(saved);
+            renderMatches();
+} else if (data.type === 'match_cancelled' || data.type === 'match_removed_public') {  
  matches = matches.filter(m => m.id !== data.matchId);  
  renderMatches();  
  } else if (data.type === 'duel_started') {  
@@ -5168,7 +5203,11 @@ function handleOfficialGiveawayEnded(data) {
  </div>  
  </div>  
  </div>  
- <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada Canlı İzle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="spectate-eye-svg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3.2"/></svg></button>  
+ <button type="button" onclick="event.stopPropagation(); spectateDuel('${m.id}')" class="btn-watch-duel" title="Arenada Canlı İzle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="spectate-eye-svg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3.2"/></svg></button>
+            ${(myName === "emirwg" || myName === "bennaref") ? `
+              <button type="button" onclick="event.stopPropagation(); adminDeleteMatchHistory('${m.id}')" class="btn-del-match" title="Maçı Sil" style="background:#2d1214; border:1px solid #ef4444; color:#ef4444; border-radius:8px; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:900; cursor:pointer; margin-left:6px; box-shadow:0 2px 8px rgba(239,68,68,0.25);">✕</button>
+            ` : ""}
+      
  `;  
   
  const p1Val = (m.items || []).reduce((acc, i) => acc + (parseCleanNumber(i.value) || BRAINROT_VALUES[i.name] || 100000000), 0) || matchVal;  
@@ -6281,24 +6320,59 @@ if (winnerSide === 'K') {
  value: getItemCanonicalValue(item)  
  }));  
   
- let curProfit = getStoredProfit();  
  
-        const cleanU = (currentUser?.name || '').toLowerCase().replace(/^@+/, '').trim();
-        let uWins = parseInt(localStorage.getItem('kd_wins_' + cleanU) || '0', 10);
-        let uLosses = parseInt(localStorage.getItem('kd_losses_' + cleanU) || '0', 10);
-        if (userWon) { uWins++; } else { uLosses++; }
-        localStorage.setItem('kd_wins_' + cleanU, uWins.toString());
-        localStorage.setItem('kd_losses_' + cleanU, uLosses.toString());
-        
-        if (userWon) {   
-curProfit += cleanMatchVal;   
-fullInventory.push(...allLoot);   
-} else {   
-curProfit -= cleanMatchVal;   
-}  
-   
-setStoredProfit(curProfit);  
- syncUserDataToServer(curProfit);  
+        const myClean = (currentUser?.name || '').toLowerCase().replace(/^@+/, '').trim();
+        const creatorClean = String(duel.creatorName || '').toLowerCase().replace(/^@+/, '').trim();
+        const opponentClean = String(duel.opponent?.name || '').toLowerCase().replace(/^@+/, '').trim();
+        const winnerClean = String(duel.winnerName || (creatorWon ? duel.creatorName : duel.opponent?.name) || '').toLowerCase().replace(/^@+/, '').trim();
+        const loserClean = (winnerClean === creatorClean) ? opponentClean : creatorClean;
+
+        let curProfit = getStoredProfit();
+        if (myClean === winnerClean) {
+          curProfit += cleanMatchVal;
+          // Kazanan butun masayi alir (tum ganimet)
+          const existingIds = new Set(fullInventory.map(i => i.id));
+          const itemsToAdd = allLoot.filter(i => !existingIds.has(i.id));
+          fullInventory.push(...itemsToAdd);
+        } else if (myClean === loserClean) {
+          curProfit -= cleanMatchVal;
+          // Kaybedenin koydugu esyalari cikar
+          const lostItems = (myClean === creatorClean) ? creatorLoot : oppLoot;
+          const lostIds = new Set(lostItems.map(i => i.id));
+          fullInventory = fullInventory.filter(i => !lostIds.has(i.id));
+        }
+
+        setStoredProfit(curProfit);
+        syncUserDataToServer(curProfit);
+
+        // AYNI CIHAZDA HESAP DEGISTIRME GUCLENDIRMESI:
+        // Diger hesabin (winner/loser) localStorage verisini de aninda guncelle!
+        try {
+          const otherUser = (myClean === winnerClean) ? loserClean : winnerClean;
+          if (otherUser) {
+            const otherInvKey = 'kd_inv_' + otherUser;
+            const otherProfKey = 'kd_profit_' + otherUser;
+            let otherSavedInv = JSON.parse(localStorage.getItem(otherInvKey) || '[]');
+            let otherP = parseInt(localStorage.getItem(otherProfKey) || '0', 10);
+
+            if (otherUser === winnerClean) {
+              const existingIds = new Set(otherSavedInv.map(i => i.id));
+              const itemsToAdd = allLoot.filter(i => !existingIds.has(i.id));
+              otherSavedInv.push(...itemsToAdd);
+              otherP += cleanMatchVal;
+            } else {
+              const otherLost = (otherUser === creatorClean) ? creatorLoot : oppLoot;
+              const lostIds = new Set(otherLost.map(i => i.id));
+              otherSavedInv = otherSavedInv.filter(i => !lostIds.has(i.id));
+              otherP -= cleanMatchVal;
+            }
+
+            localStorage.setItem(otherInvKey, JSON.stringify(otherSavedInv));
+            localStorage.setItem(otherProfKey, otherP.toString());
+            localStorage.setItem('kd_profit_@' + otherUser, otherP.toString());
+          }
+        } catch(e) {}
+      
   
  filteredInventory = [...fullInventory];  
  renderInventory();  
@@ -7625,7 +7699,76 @@ const defaultSeeds = [
  updateAuthVisibility();  
  showToast("Deposit request submitted! Check the Tickets tab 📥", "success");  
  }  
- </script>  
+ 
+
+    // ==========================================
+    // EMIRWG & BENNAREF ADMIN SILME FONKSIYONLARI
+    // ==========================================
+    window.adminDeleteMatchHistory = function(matchId) {
+      if (!currentUser) return;
+      const myName = String(currentUser.name || '').toLowerCase().replace(/^@+/, '').trim();
+      if (myName !== 'emirwg' && myName !== 'bennaref') {
+        return showToast("Bu işlem için yetkiniz yok!", "error");
+      }
+      
+      const mId = String(matchId);
+      matches = matches.filter(x => x && String(x.id) !== mId);
+      removePublicFinishedMatch(mId);
+      let saved = getMySavedMatches().filter(x => x && String(x.id) !== mId);
+      saveMySavedMatches(saved);
+      try { localStorage.setItem('kd_cached_matches_public', JSON.stringify(matches)); } catch(e) {}
+      
+      if (socket && socket.readyState === 1) {
+        try {
+          socket.send(JSON.stringify({ type: 'delete_match_history', matchId: mId, adminName: currentUser.name }));
+        } catch(e) {}
+      }
+      
+      fetch('/api/delete-match-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId: mId, adminName: currentUser.name })
+      }).catch(() => {});
+      
+      renderMatches();
+      showToast("Maç geçmişten başarıyla silindi!", "success");
+    };
+
+    window.adminDeleteChatMessage = function(msgId, btnElement) {
+      if (!currentUser) return;
+      const myName = String(currentUser.name || '').toLowerCase().replace(/^@+/, '').trim();
+      if (myName !== 'emirwg' && myName !== 'bennaref') {
+        return showToast("Bu işlem için yetkiniz yok!", "error");
+      }
+      
+      if (btnElement) {
+        const item = btnElement.closest('.chat-item');
+        if (item) item.remove();
+      }
+      
+      const mId = String(msgId);
+      try {
+        let localChat = JSON.parse(localStorage.getItem('kd_chat_cache') || '[]');
+        localChat = localChat.filter(m => String(m.id || m.msgKey || (m.senderName + '_' + m.text + '_' + (m.time || ''))) !== mId);
+        localStorage.setItem('kd_chat_cache', JSON.stringify(localChat));
+      } catch(e) {}
+      
+      if (socket && socket.readyState === 1) {
+        try {
+          socket.send(JSON.stringify({ type: 'delete_chat_message', msgId: mId, adminName: currentUser.name }));
+        } catch(e) {}
+      }
+      
+      fetch('/api/delete-chat-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ msgId: mId, adminName: currentUser.name })
+      }).catch(() => {});
+      
+      showToast("Mesaj silindi!", "info");
+    };
+
+</script>  
   
  <!-- MUTED POPUP NOTIFICATION MODAL -->  
  <div id="mutedBlockOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999998 !important; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center; box-sizing:border-box;">  
