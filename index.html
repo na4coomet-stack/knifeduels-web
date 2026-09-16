@@ -3843,27 +3843,40 @@ localStorage.setItem(getMyMatchesStorageKey(), JSON.stringify(unique));
 } catch(e) {}   
 }   
   
-function handleImgError(el, name) {   
-if (!el.dataset.step) {   
-el.dataset.step = '1';   
-el.src = el.src.replace(/\\.png$/i, '.webp');   
-} else if (el.dataset.step === '1') {   
-el.dataset.step = '2';   
-el.src = el.src.replace(/\\.webp$/i, '.jpg');   
-} else {   
-el.onerror = null;   
-const initial = name ? name.substring(0, 2).toUpperCase() : "BR";   
-el.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="%23141b26"/><text x="32" y="38" font-family="sans-serif" font-size="20" font-weight="900" fill="%23facc15" text-anchor="middle">${initial}</text></svg>`;   
-}   
-}   
-  
-function getItemImgUrl(item) {   
-if (item.img) return item.img;   
-if (item.image) return item.image;   
-const safe = (item.name || "").trim().replace(/ /g, "_");   
-return `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(safe)}.png`;   
-}   
-  
+function handleImgError(el, name) {
+  if (!el) return;
+  const safeName = (name || '').trim().replace(/ /g, '_');
+  if (!el.dataset.step) {
+    el.dataset.step = '1';
+    el.src = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(safeName)}.webp`;
+  } else if (el.dataset.step === '1') {
+    el.dataset.step = '2';
+    el.src = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(safeName)}.jpg`;
+  } else if (el.dataset.step === '2') {
+    el.dataset.step = '3';
+    el.src = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(safeName.toLowerCase())}.png`;
+  } else {
+    el.onerror = null;
+    const initial = name ? name.substring(0, 2).toUpperCase() : "BR";
+    el.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="%23141b26"/><text x="32" y="38" font-family="sans-serif" font-size="20" font-weight="900" fill="%23facc15" text-anchor="middle">${initial}</text></svg>`;
+  }
+}
+
+function getItemImgUrl(item) {
+  if (!item) return `https://tr.rbxcdn.com/default.png`;
+  const name = (item.name || "").trim();
+  const safe = name.replace(/ /g, "_");
+  const fandomUrl = `https://stealabrainrot.fandom.com/wiki/Special:FilePath/${encodeURIComponent(safe)}.png`;
+
+  if (item.image && typeof item.image === 'string' && !item.image.includes('default.png') && item.image.startsWith('http')) {
+    return item.image;
+  }
+  if (item.img && typeof item.img === 'string' && !item.img.includes('default.png') && item.img.startsWith('http')) {
+    return item.img;
+  }
+  return fandomUrl;
+}
+
 function showToast(message, type = 'info') {   
 const toast = document.getElementById('siteToast');   
 const icon = document.getElementById('toastIcon');   
@@ -7208,7 +7221,7 @@ showToast(`✅ ${qty}x ${brainrotToAdd} added to @${targetUser}!`, "success");
 input.value = '';   
 return;   
 }   
-const msg = { id: 'tm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6), sender: currentUser.name, text, time: new Date().toLocaleTimeString(), timestamp: Date.now() };   
+const msg = { sender: currentUser.name, text, time: new Date().toLocaleTimeString() };   
 if (socket && socket.readyState === 1) {   
 socket.send(JSON.stringify({ type: 'ticket_message', ticketId: currentAdminViewingTicketId, message: msg }));   
 }   
@@ -7250,21 +7263,28 @@ async function searchVermeUser() {
   const targetClean = username.toLowerCase().trim();
   const myClean = (currentUser?.name || '').toLowerCase().replace(/^@+/, '').trim();
 
-  // Helper to construct normalized user object and render
   function setupAndRenderUser(serverData) {
     let avatar = getSafeAvatar(null, username);
     if (serverData && serverData.avatarUrl) avatar = serverData.avatarUrl;
     
     let rawInv = [];
-    if (targetClean === myClean && fullInventory && fullInventory.length) {
-      rawInv = fullInventory;
-    } else if (serverData && serverData.userData && Array.isArray(serverData.userData.inventory)) {
-      rawInv = serverData.userData.inventory;
+    // CRITICAL: If target is ME, ALWAYS use fullInventory directly (even if length is 0!)
+    if (targetClean === myClean) {
+      rawInv = Array.isArray(fullInventory) ? fullInventory : [];
     } else {
+      // For another user, check if admin cleared them locally first
       try {
         const cached = localStorage.getItem('kd_inv_' + targetClean);
-        if (cached) rawInv = JSON.parse(cached);
-      } catch(e) {}
+        if (cached !== null) {
+          rawInv = JSON.parse(cached);
+        } else if (serverData && serverData.userData && Array.isArray(serverData.userData.inventory)) {
+          rawInv = serverData.userData.inventory;
+        }
+      } catch(e) {
+        if (serverData && serverData.userData && Array.isArray(serverData.userData.inventory)) {
+          rawInv = serverData.userData.inventory;
+        }
+      }
     }
 
     const normalizedInv = (rawInv || []).map((item, idx) => ({
@@ -7363,11 +7383,11 @@ async function clearTargetUserInventory() {
   } catch(e) {}
 
   try {
-    fetch('/api/admin/clear-inventory', {
+    await fetch('/api/admin/clear-inventory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: cleanTarget })
-    }).catch(() => {});
+    });
 
     await fetch('/api/sync-user', {
       method: 'POST',
